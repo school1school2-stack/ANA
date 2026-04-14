@@ -2,140 +2,83 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>اختبار أ. عبدالعزيز الفيفي</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <title>لوحة التحكم | أ. عبدالعزيز الفيفي</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        :root { --primary: #1e3a8a; --accent: #3b82f6; --success: #10b981; --error: #ef4444; --hint: #f59e0b; --bg: #f8fafc; }
-        .theme-1 { --s-color: #1e3a8a; } .theme-2 { --s-color: #059669; }
-        .theme-3 { --s-color: #d97706; } .theme-4 { --s-color: #7c3aed; }
-        .theme-5 { --s-color: #db2777; } .theme-6 { --s-color: #0891b2; }
-
-        body { font-family: 'Cairo', sans-serif; background: var(--bg); margin: 0; transition: 0.5s; }
-        .header { background: linear-gradient(135deg, var(--s-color, #1e3a8a), #3b82f6); color: white; padding: 40px 20px; text-align: center; clip-path: polygon(0 0, 100% 0, 100% 90%, 0% 100%); }
-        .container { max-width: 900px; margin: -30px auto 50px; padding: 0 20px; }
-        #timer-bar { position: sticky; top: 10px; z-index: 100; background: white; border: 2px solid var(--s-color, #1e3a8a); padding: 8px 25px; border-radius: 50px; width: fit-content; margin: 0 auto 20px; font-weight: 900; }
-        #progress-fill { height: 10px; background: var(--success); width: 0%; transition: 0.5s; border-radius: 10px; }
-        .card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); display: none; }
-        .card.active { display: block; animation: slideIn 0.4s ease; }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .q-box { background: #f1f5f9; padding: 20px; border-radius: 15px; margin-bottom: 20px; border-right: 6px solid var(--s-color, #1e3a8a); position: relative; }
-        .passage { background: #fffde7; padding: 15px; border: 1px dashed #fbc02d; border-radius: 10px; margin-bottom: 15px; font-weight: bold; line-height: 1.8; }
-        .hint-btn { position: absolute; left: 15px; top: 15px; background: var(--hint); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; }
-        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .opt-label { background: white; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 14px; }
-        input[type="text"] { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-family: 'Cairo'; margin-top: 10px; box-sizing: border-box; }
-        .btn-next { background: var(--s-color, #1e3a8a); color: white; padding: 12px 35px; border-radius: 12px; border: none; font-weight: 700; width: 100%; cursor: pointer; margin-top: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 12px; border: 1px solid #e2e8f0; text-align: right; font-size: 14px; }
+        body { font-family: 'Cairo', sans-serif; background: #f0f4f8; padding: 20px; direction: rtl; }
+        .box { max-width: 900px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .q-row { border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 8px; background: #fafafa; }
+        select, input, textarea { width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc; font-family: 'Cairo'; }
+        .btn { background: #1e3a8a; color: white; padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; font-size: 1.1em; }
+        .yellow { background: #fffde7; }
     </style>
 </head>
-<body class="theme-1">
-<script>
-    if (localStorage.getItem('alfaifi_quiz_lock')) {
-        window.stop();
-        document.documentElement.innerHTML = `<body style="display:flex; align-items:center; justify-content:center; height:100vh; font-family:'Cairo'; text-align:center;"><div><h1>🛑 وصول مرفوض</h1><p>لقد أنهيت هذا الاختبار مسبقاً.</p><b>أ. عبدالعزيز الفيفي</b></div></body>`;
-    }
-</script>
-
-<div class="header">
-    <h1 id="tTitle">تحميل...</h1>
-    <p>إعداد الأستاذ: عبدالعزيز الفيفي - ثانوية الأمير عبدالمجيد 😇</p>
-</div>
-
-<div class="container">
-    <div id="timer-bar">⏱️ <span id="clock">45:00</span></div>
-    <div style="background:#e2e8f0; height:10px; border-radius:10px; margin-bottom:20px;"><div id="progress-fill"></div></div>
-    <form id="quizForm">
-        <div class="card active" id="step0">
-            <h3 style="text-align:center">بيانات الطالب</h3>
-            <input type="text" id="stdName" placeholder="الاسم الكامل" required>
-            <input type="text" id="stdClass" placeholder="الصف والفصل" required>
-            <button type="button" class="btn-next" onclick="startExam()">ابدأ الاختبار الآن</button>
-        </div>
-        <div id="quizContent"></div>
-    </form>
-    <div id="resultCard" class="card">
-        <h2 style="text-align:center">التقرير النهائي</h2>
-        <div id="scoreBox" style="text-align:center; font-size:45px; font-weight:900;"></div>
-        <div style="overflow-x:auto"><table id="sumTable"><thead><tr><th>س</th><th>السؤال</th><th>إجابتك</th><th>الصحيحة</th></tr></thead><tbody></tbody></table></div>
+<body>
+<div class="box">
+    <h2 style="color:#1e3a8a">🛠️ صانع الاختبارات الذكية (42 سؤالاً)</h2>
+    <input type="text" id="testTitle" placeholder="عنوان الاختبار">
+    <div id="editor"></div>
+    <button class="btn" onclick="generate()">🔗 توليد رابط الاختبار الذكي للطلاب</button>
+    <div id="res" style="display:none; margin-top:20px;">
+        <p>انسخ هذا الرابط وأرسله لطلابك:</p>
+        <textarea id="link" style="height:80px;" readonly></textarea>
     </div>
 </div>
 
 <script>
-    let examData = [];
-    const urlParams = new URLSearchParams(window.location.search);
-    const raw = urlParams.get('data');
-    if(raw) {
-        const decoded = JSON.parse(decodeURIComponent(escape(atob(raw))));
-        examData = decoded.questions;
-        document.getElementById('tTitle').innerText = decoded.title;
-    }
+    const types = ["مثّل في جملة", "أكمل الفراغ", "اختر الإجابة", "أعرب ما تحته خط", "صح وخطأ", "استخرج من النص"];
+    const editor = document.getElementById('editor');
 
-    function startExam() {
-        if(!document.getElementById('stdName').value) return Swal.fire('تنبيه','أكمل بياناتك','warning');
-        buildSections();
-        document.getElementById('step0').style.display = 'none';
-        document.getElementById('step1').classList.add('active');
-        startTimer(2700);
-    }
-
-    function buildSections() {
-        const cont = document.getElementById('quizContent');
-        for(let s=1; s<=6; s++) {
-            const card = document.createElement('div');
-            card.className = 'card'; card.id = 'step'+s;
-            card.innerHTML = `<h2 style="text-align:center">القسم ${s}</h2>`;
-            for(let q=0; q<7; q++) {
-                let idx = ((s-1)*7)+q;
-                let item = examData[idx];
-                let qHtml = `<div class="q-box"><button type="button" class="hint-btn" onclick="Swal.fire('تلميحة','${item.hint}','info')">؟</button>`;
-                if(item.passage) qHtml += `<div class="passage">${item.passage}</div>`;
-                qHtml += `<b>س${idx+1}: ${item.q}</b>`;
-                if(item.type == "3" || item.type == "5") {
-                    qHtml += `<div class="options-grid">`;
-                    item.opts.forEach(o => qHtml += `<label class="opt-label"><input type="radio" name="q${idx}" value="${o}"> ${o}</label>`);
-                    qHtml += `</div>`;
-                } else {
-                    qHtml += `<input type="text" id="ans${idx}" placeholder="أجب هنا...">`;
-                }
-                card.innerHTML += qHtml + `</div>`;
-            }
-            card.innerHTML += `<button type="button" class="btn-next" onclick="${s==6?'finish()':'goStep('+(s+1)+')'}">${s==6?'إنهاء الاختبار':'التالي ⬅️'}</button>`;
-            cont.appendChild(card);
+    for(let s=1; s<=6; s++) {
+        editor.innerHTML += `<h3 style="background:#1e3a8a; color:white; padding:5px 15px; border-radius:5px;">القسم ${s}: ${types[s-1]}</h3>`;
+        for(let q=1; q<=7; q++) {
+            let idx = ((s-1)*7) + q;
+            editor.innerHTML += `
+                <div class="q-row" id="row${idx}">
+                    <b>سؤال ${idx}:</b>
+                    <select id="type${idx}" onchange="updateUI(${idx})">
+                        ${types.map((t,i) => `<option value="${i+1}" ${s==i+1?'selected':''}>${t}</option>`).join('')}
+                    </select>
+                    <div id="ui${idx}">
+                        ${s==6?'<textarea class="passage yellow" placeholder="النص الأصفر"></textarea>':''}
+                        <input type="text" class="q-txt" placeholder="نص السؤال">
+                        ${s==3?'<input type="text" class="opts" placeholder="الخيارات تفصلها فاصلة ,">':''}
+                        <input type="text" class="q-ans" placeholder="الإجابة الصحيحة (للتصحيح الذكي)">
+                    </div>
+                </div>`;
         }
     }
 
-    function goStep(n) {
-        document.querySelector('.card.active').classList.remove('active');
-        document.getElementById('step'+n).classList.add('active');
-        document.body.className = 'theme-'+n;
-        document.getElementById('progress-fill').style.width = (n/6)*100+'%';
-        window.scrollTo(0,0);
+    function updateUI(idx) {
+        const t = document.getElementById('type'+idx).value;
+        const ui = document.getElementById('ui'+idx);
+        let h = ``;
+        if(t=="6") h += `<textarea class="passage yellow" placeholder="النص الأصفر"></textarea>`;
+        h += `<input type="text" class="q-txt" placeholder="نص السؤال">`;
+        if(t=="3") h += `<input type="text" class="opts" placeholder="الخيارات تفصلها فاصلة ,">`;
+        h += `<input type="text" class="q-ans" placeholder="الإجابة الصحيحة">`;
+        ui.innerHTML = h;
     }
 
-    function startTimer(sec) {
-        setInterval(() => {
-            let m=Math.floor(sec/60), s=sec%60;
-            document.getElementById('clock').innerText = `${m}:${s<10?'0'+s:s}`;
-            sec--;
-        }, 1000);
-    }
-
-    function finish() {
-        let score = 0;
-        const tbody = document.querySelector('#sumTable tbody');
-        examData.forEach((item, i) => {
-            let uVal = (item.type=="3" || item.type=="5") ? (document.querySelector(`input[name="q${i}"]:checked`)?.value || "لم يحل") : document.getElementById('ans'+i).value;
-            let isCorrect = uVal.trim() === item.ans.trim();
-            if(isCorrect) score++;
-            tbody.innerHTML += `<tr><td>${i+1}</td><td>${item.q}</td><td>${uVal}</td><td>${item.ans}</td></tr>`;
-        });
-        localStorage.setItem('alfaifi_quiz_lock', 'true');
-        document.getElementById('quizForm').style.display = 'none';
-        document.getElementById('resultCard').classList.add('active');
-        document.getElementById('scoreBox').innerText = score + ' / 42';
+    function generate() {
+        const questions = [];
+        for(let i=1; i<=42; i++) {
+            const r = document.getElementById('row'+i);
+            const type = document.getElementById('type'+i).value;
+            let obj = {
+                type: type,
+                q: r.querySelector('.q-text')?.value || r.querySelector('.q-txt').value,
+                ans: r.querySelector('.q-ans').value,
+                hint: "قاعدة نحوية"
+            };
+            if(type=="3") obj.opts = r.querySelector('.opts').value.split(',');
+            if(type=="5") obj.opts = ["صح", "خطأ"];
+            if(type=="6") obj.passage = r.querySelector('.passage').value;
+            questions.push(obj);
+        }
+        const data = btoa(unescape(encodeURIComponent(JSON.stringify({title: document.getElementById('testTitle').value, questions: questions}))));
+        document.getElementById('link').value = window.location.href.replace('Admin.html','Student.html') + "?data=" + data;
+        document.getElementById('res').style.display = 'block';
     }
 </script>
 </body>

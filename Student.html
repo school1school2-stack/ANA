@@ -3,174 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصة أ. عبدالعزيز الفيفي</title>
+    <title>اختبار الطالب</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
-    
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <style>
-        :root { --primary: #1e3a8a; --accent: #3b82f6; --success: #10b981; --error: #ef4444; --bg: #f4f7f6; }
-        body { font-family: 'Cairo', sans-serif; background: var(--bg); margin: 0; padding-bottom: 90px; direction: rtl; }
-        .header { background: white; padding: 15px; border-bottom: 2px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; position: sticky; top:0; z-index:100; }
-        .teacher-box { background: #f1f5f9; padding: 8px 15px; border-radius: 12px; font-weight: 900; color: var(--primary); border: 1px solid #cbd5e1; }
-        .main-content { padding: 15px; max-width: 800px; margin: auto; }
-        .q-card { background: white; border-radius: 15px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-right: 8px solid var(--primary); overflow: hidden; }
-        .q-head { background: var(--primary); color: white; padding: 8px 15px; display: flex; justify-content: space-between; }
-        input, select, textarea { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: 1px solid #cbd5e1; font-family: 'Cairo'; box-sizing: border-box; }
-        .passage-area { background: #fffde7 !important; border: 2px dashed #fbc02d !important; }
-        .opt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: #f1f5f9; padding: 10px; border-radius: 10px; }
-        .q-menu { display: none; position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%); background: white; width: 90%; max-width: 350px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); z-index: 1000; padding: 10px; border: 1px solid #ddd; }
-        .menu-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid #f1f5f9; cursor: pointer; font-weight: bold; }
-        .bottom-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(30, 58, 138, 0.85); backdrop-filter: blur(10px); padding: 12px 5px; display: flex; justify-content: center; gap: 6px; z-index: 900; }
-        .bar-btn { flex: 1; max-width: 80px; padding: 8px 5px; border-radius: 10px; border: none; color: white; font-weight: bold; cursor: pointer; font-size: 12px; }
-        #resultsModal { display: none; position: fixed; top: 2%; left: 2%; width: 96%; height: 96%; background: white; z-index: 2000; overflow-y: auto; border-radius: 20px; padding: 20px; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 10px; border: 1px solid #ddd; text-align: center; font-size: 14px; }
-        .overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:950; }
+        body { font-family: 'Cairo', sans-serif; background: #f0f4f8; margin: 0; direction: rtl; }
+        .container { max-width: 600px; margin: 20px auto; padding: 20px; background: white; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .q-box { background: #f8fafc; padding: 15px; border-radius: 12px; margin-bottom: 15px; border-right: 5px solid #1e3a8a; }
+        input { width: 100%; padding: 12px; margin-top: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
+        .btn { background: #1e3a8a; color: white; padding: 15px; width: 100%; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; }
     </style>
 </head>
 <body>
-
-<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
-
-<div class="header">
-    <div class="teacher-box">أ. عبدالعزيز الفيفي 😇</div>
-    <div style="font-weight: bold; color: var(--primary);">ثانوية الأمير عبدالمجيد</div>
-</div>
-
-<div class="main-content">
-    <input type="text" id="testTitle" placeholder="أدخل عنوان الاختبار (مثلاً: الهمزة المتطرفة)" style="font-size: 1.2em; border-color: var(--primary);">
-    <div id="questionsContainer"></div>
-</div>
-
-<div class="q-menu" id="qMenu">
-    <div style="text-align:center; font-weight:900; padding:10px; color:#64748b;">اختر نوع السؤال</div>
-    <div class="menu-item" onclick="addQuestion(1)">أكمل الفراغ ⚪</div>
-    <div class="menu-item" onclick="addQuestion(2)">أعرب ما تحته خط ✏️</div>
-    <div class="menu-item" onclick="addQuestion(3)">مثّل في جملة مفيدة 💬</div>
-    <div class="menu-item" onclick="addQuestion(4)">استخرج من النص 📄</div>
-    <div class="menu-item" onclick="addQuestion(5)">صح وخطأ ✅</div>
-    <div class="menu-item" onclick="addQuestion(6)">اختر الإجابة الصحيحة 🔘</div>
-</div>
-
-<div id="resultsModal">
-    <button onclick="closeResults()" style="background:red; color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer;">إغلاق ×</button>
-    <h2 id="resTitle" style="text-align:center; color:var(--primary);">تحليل نتائج الطلاب</h2>
-    <div style="max-width:250px; margin:auto;"><canvas id="statsChart"></canvas></div>
-    <table id="resultsTable">
-        <thead><tr style="background:var(--primary); color:white;"><th>الطالب</th><th>الفصل</th><th>الدرجة</th><th>تفاصيل</th></tr></thead>
-        <tbody id="resultsBody"></tbody>
-    </table>
-</div>
-
-<div class="bottom-bar">
-    <button class="bar-btn" style="background:#3b82f6" onclick="toggleMenu()">➕ سؤال</button>
-    <button class="bar-btn" style="background:#8b5cf6" onclick="saveToCloud()">💾 حفظ</button>
-    <button class="bar-btn" style="background:#10b981" onclick="generateLink()">🔗 الرابط</button>
-    <button class="bar-btn" style="background:#f97316" onclick="showResultsTrigger()">📊 نتائج</button>
-    <button class="bar-btn" style="background:#ef4444" onclick="location.reload()">🏠 الرئيسية</button>
+<div class="container">
+    <h2 id="title" style="text-align:center; color:#1e3a8a;">تحميل الاختبار...</h2>
+    <div id="loginSection">
+        <input type="text" id="stdName" placeholder="الاسم الرباعي">
+        <input type="text" id="stdClass" placeholder="الصف والفصل">
+        <button class="btn" onclick="startTest()">دخول الاختبار</button>
+    </div>
+    <div id="quizSection" style="display:none;"></div>
 </div>
 
 <script>
-    // إعدادات Firebase الخاصة بك
-    const firebaseConfig = {
-        apiKey: "AIzaSyAVRIim7aXjg0hGrMk0qVrXT...", // تأكد من وضع الكود كامل من صورتك
-        authDomain: "youy-apps.firebaseapp.com",
-        databaseURL: "https://youy-apps-default-rtdb.firebaseio.com",
-        projectId: "youy-apps",
-        storageBucket: "youy-apps.firebasestorage.app",
-        messagingSenderId: "690543747528",
-        appId: "1:690543747528:web:10c85ef0c93b79596620fd"
-    };
+    const firebaseConfig = { /* انسخ نفس إعدادات السحابة هنا */ };
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
-    let qCount = 0; let currentTestID = null; let myChart = null;
+    const testID = new URLSearchParams(window.location.search).get('id');
+    let questions = [];
 
-    function toggleMenu() {
-        const menu = document.getElementById('qMenu');
-        const overlay = document.getElementById('overlay');
-        const isVisible = menu.style.display === 'block';
-        menu.style.display = isVisible ? 'none' : 'block';
-        overlay.style.display = isVisible ? 'none' : 'block';
-    }
+    database.ref('tests/' + testID).once('value', (s) => {
+        const d = s.val(); if(d) { questions = d.questions; document.getElementById('title').innerText = d.title; }
+    });
 
-    function addQuestion(type) {
-        toggleMenu(); qCount++;
-        const typeNames = ["أكمل الفراغ", "إعراب", "تمثيل", "استخراج", "صح وخطأ", "اختيارات"];
-        const html = `
-            <div class="q-card" id="qCard${qCount}" data-type="${type}">
-                <div class="q-head"><span>س ${qCount} - ${typeNames[type-1]}</span><button onclick="this.parentElement.parentElement.remove()" style="background:none; border:none; color:white; cursor:pointer;">×</button></div>
-                <div class="q-body">
-                    ${type == 4 ? '<textarea class="passage-area" placeholder="ضع النص هنا..."></textarea>' : ''}
-                    <input type="text" class="q-text" placeholder="اكتب نص السؤال (مثلاً: مثّل لمضارع مجزوم بلم)">
-                    ${type == 6 ? '<div class="opt-grid"><input type="text" class="o1" placeholder="أ"><input type="text" class="o2" placeholder="ب"><input type="text" class="o3" placeholder="ج"><input type="text" class="o4" placeholder="د"></div>' : ''}
-                    <input type="text" class="q-ans" placeholder="الكلمة المفتاحية (اختياري)">
-                </div>
-            </div>`;
-        document.getElementById('questionsContainer').insertAdjacentHTML('beforeend', html);
-    }
-
-    function collectData() {
-        const data = [];
-        document.querySelectorAll('.q-card').forEach(card => {
-            const type = card.getAttribute('data-type');
-            let obj = { type, q: card.querySelector('.q-text').value, ans: card.querySelector('.q-ans').value };
-            if(type == 6) obj.opts = [card.querySelector('.o1').value, card.querySelector('.o2').value, card.querySelector('.o3').value, card.querySelector('.o4').value];
-            if(type == 5) obj.opts = ["صح", "خطأ"];
-            if(type == 4) obj.passage = card.querySelector('.passage-area').value;
-            data.push(obj);
+    function startTest() {
+        if(!document.getElementById('stdName').value) return;
+        document.getElementById('loginSection').style.display = 'none';
+        const quiz = document.getElementById('quizSection'); quiz.style.display = 'block';
+        questions.forEach((q, i) => {
+            quiz.innerHTML += `<div class="q-box"><b>س${i+1}: ${q.q}</b><input type="text" id="ans${i}" placeholder="أجب هنا..."></div>`;
         });
-        return data;
+        quiz.innerHTML += `<button class="btn" onclick="submit()">إرسال الإجابات</button>`;
     }
 
-    function saveToCloud() {
-        const title = document.getElementById('testTitle').value;
-        const questions = collectData();
-        if(!title || questions.length === 0) return Swal.fire('تنبيه','أكمل بيانات الاختبار','warning');
-        currentTestID = Date.now();
-        database.ref('tests/' + currentTestID).set({ title, questions }).then(() => Swal.fire('تم الحفظ','تم تخزين الاختبار في السحابة','success'));
-    }
+    function submit() {
+        let score = 0;
+        questions.forEach((q, i) => {
+            let uAns = document.getElementById('ans'+i).value.trim();
+            // --- التصحيح الذكي جداً ---
+            const clean = (s) => s.replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/\s+/g, '').trim();
+            if(clean(uAns).includes(clean(q.ans)) && uAns !== "") score++;
+        });
 
-    function generateLink() {
-        if(!currentTestID) return Swal.fire('تنبيه','احفظ الاختبار أولاً','warning');
-        const url = window.location.href.replace('index.html', 'Student.html') + "?id=" + currentTestID;
-        Swal.fire({ title: 'رابط الطلاب جاهز', html: `<textarea id="copyUrl" style="width:100%;height:60px; font-size:12px;">${url}</textarea>`, confirmButtonText: 'نسخ' }).then(() => {
-            document.getElementById('copyUrl').select(); document.execCommand('copy');
+        database.ref('results/' + testID).push({
+            name: document.getElementById('stdName').value,
+            class: document.getElementById('stdClass').value,
+            score: score, total: questions.length
+        }).then(() => {
+            Swal.fire('انتهى الاختبار', `درجتك هي: ${score} من ${questions.length}`, 'success').then(() => location.reload());
         });
     }
-
-    function showResultsTrigger() {
-        if(!currentTestID) return Swal.fire('خطأ','لا يوجد اختبار مفتوح','error');
-        document.getElementById('resultsModal').style.display = 'block';
-        database.ref('results/' + currentTestID).on('value', (s) => {
-            const data = s.val(); const body = document.getElementById('resultsBody'); body.innerHTML = '';
-            let stats = { ممتاز: 0, جيد: 0, ضعيف: 0 };
-            if(!data) return;
-            Object.values(data).forEach(res => {
-                const p = (res.score / res.total) * 100;
-                if(p >= 85) stats.ممتاز++; else if(p >= 50) stats.جيد++; else stats.ضعيف++;
-                body.innerHTML += `<tr><td>${res.name}</td><td>${res.class}</td><td>${res.score}/${res.total}</td><td><button onclick='viewDetails(${JSON.stringify(res.details)})'>👁️</button></td></tr>`;
-            });
-            updateChart(stats);
-        });
-    }
-
-    function updateChart(s) {
-        const ctx = document.getElementById('statsChart').getContext('2d');
-        if(myChart) myChart.destroy();
-        myChart = new Chart(ctx, { type: 'doughnut', data: { labels: ['ممتاز', 'جيد', 'ضعيف'], datasets: [{ data: [s.ممتاز, s.جيد, s.ضعيف], backgroundColor: ['#10b981', '#f59e0b', '#ef4444'] }] } });
-    }
-
-    function viewDetails(details) {
-        let h = '<div style="text-align:right; font-size:14px;">';
-        details.forEach(d => h += `<p><b>س: ${d.question}</b><br>إجابة الطالب: <span style="color:${d.status?'green':'red'}">${d.userAnswer}</span><br>النتيجة: ${d.status?'✅ صحيح':'❌ خطأ'}</p><hr>`);
-        Swal.fire({ title: 'تفاصيل الطالب', html: h + '</div>', width: '90%' });
-    }
-
-    function closeResults() { document.getElementById('resultsModal').style.display = 'none'; }
 </script>
 </body>
 </html>

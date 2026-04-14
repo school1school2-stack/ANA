@@ -3,152 +3,155 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصة الطالب | أ. عبدالعزيز الفيفي</title>
+    <title>اختبار اللغة العربية | أ. عبدالعزيز الفيفي</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        :root { --primary: #1e3a8a; --success: #10b981; --error: #ef4444; }
-        body { font-family: 'Cairo', sans-serif; background: #f0f4f8; margin: 0; direction: rtl; }
-        .header { background: var(--primary); color: white; padding: 20px; text-align: center; border-bottom: 4px solid #3b82f6; }
-        .container { max-width: 700px; margin: 20px auto; padding: 15px; }
-        .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .q-box { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; border-right: 6px solid var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        input { width: 100%; padding: 12px; margin-top: 10px; border-radius: 8px; border: 1px solid #ddd; font-family: 'Cairo'; box-sizing: border-box; }
-        .btn { background: var(--primary); color: white; padding: 15px; width: 100%; border: none; border-radius: 10px; font-weight: 900; cursor: pointer; font-size: 1.1em; }
-        #timer { position: fixed; top: 10px; left: 10px; background: white; padding: 5px 15px; border-radius: 50px; border: 2px solid var(--primary); font-weight: 900; }
-        .summary-item { border-bottom: 1px solid #eee; padding: 10px 0; }
+        :root { --primary: #1e3a8a; --accent: #3b82f6; --bg: #f0f4f8; }
+        body { font-family: 'Cairo', sans-serif; background: var(--bg); margin: 0; direction: rtl; }
+        .header { background: var(--primary); color: white; padding: 20px; text-align: center; border-bottom: 5px solid var(--accent); }
+        .container { max-width: 800px; margin: 20px auto; padding: 0 15px; }
+        
+        .q-card { background: white; padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); position: relative; border-right: 6px solid var(--primary); }
+        
+        /* مربع نوع السؤال الصغير */
+        .q-type-badge { position: absolute; top: -12px; left: 20px; background: var(--accent); color: white; padding: 2px 12px; border-radius: 8px; font-size: 12px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        
+        .passage-box { background: #fff9c4; padding: 15px; border-radius: 10px; border: 2px dashed #fbc02d; margin-bottom: 15px; font-weight: bold; line-height: 1.8; }
+        
+        /* تنسيق الخيارات أ ب ج د */
+        .opt-container { display: flex; align-items: center; margin: 10px 0; cursor: pointer; background: #f8fafc; padding: 10px; border-radius: 8px; transition: 0.3s; }
+        .opt-container:hover { background: #e2e8f0; }
+        .opt-symbol { width: 30px; height: 30px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; border-radius: 50%; margin-left: 15px; font-weight: bold; }
+        
+        /* تنسيق صح وخطأ */
+        .tf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+        .tf-btn { padding: 15px; border: 2px solid #ddd; border-radius: 12px; text-align: center; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .tf-btn input { display: none; }
+        .tf-btn:has(input:checked) { background: var(--primary); color: white; border-color: var(--primary); }
+
+        input[type="text"] { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-family: 'Cairo'; margin-top: 10px; }
+        .btn-submit { background: #10b981; color: white; padding: 15px; width: 100%; border: none; border-radius: 12px; font-weight: 900; font-size: 1.2em; cursor: pointer; margin-top: 20px; }
     </style>
 </head>
 <body>
 
-<div id="timer">35:00</div>
-
 <div class="header">
-    <h1 id="testTitle">جاري تحميل الاختبار...</h1>
-    <p>ثانوية الأمير عبدالمجيد 😇</p>
+    <h1 id="testTitle">تحميل الاختبار...</h1>
+    <div style="font-weight: bold;">أ. عبدالعزيز الفيفي 😇</div>
 </div>
 
 <div class="container">
-    <div id="loginSection" class="card">
+    <div id="loginSection" class="q-card">
         <h3 style="text-align:center;">بيانات الطالب</h3>
         <input type="text" id="stdName" placeholder="الاسم الكامل">
         <input type="text" id="stdClass" placeholder="الصف والفصل">
-        <button class="btn" onclick="startExam()" style="margin-top:20px;">دخول الاختبار</button>
+        <button class="btn-submit" style="background: var(--primary)" onclick="startExam()">دخول الاختبار</button>
     </div>
-
     <div id="quizSection" style="display:none;"></div>
 </div>
 
 <script>
-    // إعدادات الفايربيس (تأكد أنها مطابقة تماماً لمشروعك)
-    const firebaseConfig = {
-        apiKey: "AIzaSyAVRIim7aXjg0hGrMk0qVrXT...", 
-        authDomain: "youy-apps.firebaseapp.com",
-        databaseURL: "https://youy-apps-default-rtdb.firebaseio.com",
-        projectId: "youy-apps",
-        storageBucket: "youy-apps.firebasestorage.app",
-        messagingSenderId: "690543747528",
-        appId: "1:690543747528:web:10c85ef0c93b79596620fd"
-    };
-
+    const firebaseConfig = { /* بيانات السحابة الخاصة بك هنا */ };
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const testID = urlParams.get('id');
+    const testID = new URLSearchParams(window.location.search).get('id');
     let examData = [];
-    let timeLeft = 35 * 60;
 
-    // جلب الأسئلة
-    if (testID) {
-        database.ref('tests/' + testID).once('value', (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                examData = data.questions;
-                document.getElementById('testTitle').innerText = data.title;
-            }
-        });
-    }
-
-    // منع الإعادة
-    if (localStorage.getItem('done_' + testID)) {
-        document.body.innerHTML = `<div style="text-align:center; padding-top:100px;"><h1>🛑 عذراً!</h1><p>لقد أديت هذا الاختبار مسبقاً.</p></div>`;
-    }
+    database.ref('tests/' + testID).once('value', (s) => {
+        const d = s.val(); if(d) { examData = d.questions; document.getElementById('testTitle').innerText = d.title; }
+    });
 
     function startExam() {
-        if (!document.getElementById('stdName').value || !document.getElementById('stdClass').value) {
-            return Swal.fire('تنبيه', 'أدخل بياناتك كاملة', 'warning');
-        }
+        if(!document.getElementById('stdName').value) return;
         document.getElementById('loginSection').style.display = 'none';
         const quiz = document.getElementById('quizSection');
         quiz.style.display = 'block';
+        
+        const typeLabels = ["أكمل الفراغ", "إعراب", "تمثيل", "استخراج", "صح وخطأ", "اختيار من متعدد"];
+        const symbols = ["أ", "ب", "ج", "د"];
 
         examData.forEach((item, i) => {
-            let html = `<div class="q-box"><b>س${i+1}: ${item.q}</b>`;
-            if (item.type == "6") { // اختيارات
-                item.opts.forEach(opt => {
-                    html += `<label style="display:block; margin:8px; cursor:pointer;"><input type="radio" name="q${i}" value="${opt}"> ${opt}</label>`;
+            let html = `<div class="q-card">
+                <div class="q-type-badge">${typeLabels[item.type-1]}</div>`;
+            
+            // 1. إظهار النص في الاستخراج (نوع 4)
+            if(item.type == 4 && item.passage) {
+                html += `<div class="passage-box">${item.passage}</div>`;
+            }
+
+            html += `<b>س${i+1}: ${item.q}</b>`;
+
+            // 2. خيارات أ ب ج د (نوع 6)
+            if(item.type == 6) {
+                item.opts.forEach((opt, idx) => {
+                    html += `
+                    <label class="opt-container">
+                        <input type="radio" name="q${i}" value="${opt}" style="display:none">
+                        <div class="opt-symbol">${symbols[idx]}</div>
+                        <span>${opt}</span>
+                    </label>`;
                 });
+            } 
+            // 3. أيقونات صح وخطأ (نوع 5)
+            else if(item.type == 5) {
+                html += `<div class="tf-grid">
+                    <label class="tf-btn"><input type="radio" name="q${i}" value="صح"> ✅ صح</label>
+                    <label class="tf-btn"><input type="radio" name="q${i}" value="خطأ"> ❌ خطأ</label>
+                </div>`;
             } else {
-                html += `<input type="text" id="ans${i}" placeholder="أجب هنا...">`;
+                html += `<input type="text" id="ans${i}" placeholder="اكتب إجابتك هنا...">`;
             }
             quiz.innerHTML += html + `</div>`;
         });
-
-        quiz.innerHTML += `<button class="btn" style="background:#10b981;" onclick="finish()">إرسال الإجابات ✅</button>`;
-        
-        setInterval(() => {
-            let m = Math.floor(timeLeft / 60);
-            let s = timeLeft % 60;
-            document.getElementById('timer').innerText = `${m}:${s < 10 ? '0' + s : s}`;
-            if (timeLeft-- <= 0) finish();
-        }, 1000);
+        quiz.innerHTML += `<button class="btn-submit" onclick="submit()">إرسال الإجابات ✅</button>`;
     }
 
-    function finish() {
+    function submit() {
         let score = 0;
         let details = [];
-        let summaryHtml = '<div style="text-align:right;">';
+        const clean = (s) => s.replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/\s+/g, ' ').trim();
 
         examData.forEach((item, i) => {
-            let uVal = item.type == "6" ? (document.querySelector(`input[name="q${i}"]:checked`)?.value || "لم يحل") : document.getElementById('ans'+i).value.trim();
-            const clean = (s) => s.replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/\s+/g, ' ').trim();
+            let uAns = (item.type == 6 || item.type == 5) ? 
+                (document.querySelector(`input[name="q${i}"]:checked`)?.value || "") : 
+                document.getElementById('ans'+i).value;
             
             let isCorrect = false;
-            // محرك التصحيح النحوي الذكي
-            if (item.q.includes("مجزوم بلم") && uVal.includes("لم") && !uVal.includes("لن")) isCorrect = true;
-            else if (clean(uVal).includes(clean(item.ans)) && uVal !== "") isCorrect = true;
+            let studentVal = clean(uAns);
+            let correctVal = clean(item.ans);
 
-            if (isCorrect) score++;
+            // 5. التصحيح النحوي الذكي جداً
+            if (item.q.includes("مجزوم بلم")) {
+                // يجب أن تحتوي الإجابة على "لم" ولا تحتوي على "لن"
+                if (studentVal.includes("لم") && !studentVal.includes("لن")) isCorrect = true;
+            } 
+            else if (item.q.includes("منصوب بلن")) {
+                if (studentVal.includes("لن") && !studentVal.includes("لم")) isCorrect = true;
+            }
+            else if (item.type == 6 || item.type == 5) {
+                if (uAns === item.ans) isCorrect = true;
+            }
+            else {
+                // للأسئلة المقالية: يجب أن تحتوي إجابة الطالب على الكلمة المفتاحية
+                if (correctVal !== "" && studentVal.includes(correctVal)) isCorrect = true;
+            }
 
-            summaryHtml += `<div class="summary-item"><b>س${i+1}:</b> ${item.q}<br>
-                            إجابتك: <span style="color:${isCorrect?'green':'red'}">${uVal}</span><br>
-                            النتيجة: ${isCorrect ? '✅ صح' : '❌ خطأ'}</div>`;
-
-            details.push({ question: item.q, userAnswer: uVal, correctAnswer: item.ans, status: isCorrect });
+            if(isCorrect) score++;
+            details.push({ question: item.q, userAnswer: uAns, status: isCorrect });
         });
 
-        // إرسال البيانات
-        const resultRef = database.ref('results/' + testID).push();
-        resultRef.set({
+        database.ref('results/' + testID).push({
             name: document.getElementById('stdName').value,
             class: document.getElementById('stdClass').value,
-            score: score,
-            total: examData.length,
-            details: details,
-            timestamp: firebase.database.ServerValue.TIMESTAMP
+            score: score, total: examData.length, details: details
         }).then(() => {
-            localStorage.setItem('done_' + testID, 'true');
-            Swal.fire({
-                title: `درجتك: ${score} من ${examData.length}`,
-                html: `<div style="max-height:300px; overflow-y:auto;">${summaryHtml}</div>`,
-                icon: 'success',
-                confirmButtonText: 'تم'
-            }).then(() => location.reload());
-        }).catch(err => Swal.fire('خطأ في الإرسال', 'تأكد من الاتصال', 'error'));
+            Swal.fire('تم الإرسال', `درجتك هي ${score} من ${examData.length}`, 'success').then(() => location.reload());
+        });
     }
 </script>
 </body>
 </html>
+

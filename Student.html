@@ -1,35 +1,88 @@
-function finish() {
-    let score = 0;
-    let resultsDetails = []; // لتخزين تفاصيل كل سؤال
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار أ. عبدالعزيز الفيفي</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root { --primary: #1e3a8a; --success: #10b981; --bg: #f8fafc; }
+        body { font-family: 'Cairo', sans-serif; background: var(--bg); margin: 0; direction: rtl; }
+        .header { background: #1e3a8a; color: white; padding: 30px; text-align: center; }
+        .container { max-width: 800px; margin: 20px auto; padding: 0 15px; }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .q-box { background: #f1f5f9; padding: 15px; border-radius: 12px; margin-bottom: 15px; border-right: 5px solid #1e3a8a; }
+        .passage { background: #fff9c4; padding: 10px; border-radius: 8px; margin-bottom: 10px; font-weight: bold; }
+        input, button { width: 100%; padding: 12px; margin-top: 10px; border-radius: 8px; border: 1px solid #ddd; font-family: 'Cairo'; }
+        .btn-next { background: #1e3a8a; color: white; border: none; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+<div class="header"><h1 id="testTitle">تحميل الاختبار...</h1></div>
+<div class="container" id="mainCont">
+    <div id="loginCard" class="card">
+        <h3>بيانات الطالب</h3>
+        <input type="text" id="stdName" placeholder="الاسم الكامل">
+        <input type="text" id="stdClass" placeholder="الصف والفصل">
+        <button class="btn-next" onclick="start()">ابدأ الاختبار (35 دقيقة)</button>
+    </div>
+    <div id="quizArea" style="display:none;"></div>
+</div>
 
-    examData.forEach((item, i) => {
-        let uVal = (item.type=="5" || item.type=="6") ? (document.querySelector(`input[name="q${i}"]:checked`)?.value || "لم يحل") : document.getElementById('ans'+i).value;
-        const clean = (s) => s.replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/\s+/g, '').trim();
-        let isCorrect = clean(uVal).includes(clean(item.ans)) && uVal.trim() !== "";
-        if(isCorrect) score++;
-        
-        resultsDetails.push({
-            question: item.q,
-            userAnswer: uVal,
-            correctAnswer: item.ans,
-            status: isCorrect
+<script>
+    const firebaseConfig = { /* انسخ نفس إعدادات السحابة من الأعلى */ };
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+    const testID = new URLSearchParams(window.location.search).get('id');
+    let examData = [];
+
+    if(localStorage.getItem('lock_'+testID)) {
+        document.body.innerHTML = "<h1 style='text-align:center; margin-top:50px;'>🛑 عذراً، لقد أنهيت هذا الاختبار مسبقاً!</h1>";
+    }
+
+    database.ref('tests/' + testID).once('value', (s) => {
+        const d = s.val(); if(d) { examData = d.questions; document.getElementById('testTitle').innerText = d.title; }
+    });
+
+    function start() {
+        if(!document.getElementById('stdName').value) return;
+        document.getElementById('loginCard').style.display = 'none';
+        const area = document.getElementById('quizArea'); area.style.display = 'block';
+        examData.forEach((item, i) => {
+            let html = `<div class="q-box">`;
+            if(item.passage) html += `<div class="passage">${item.passage}</div>`;
+            html += `<b>س${i+1}: ${item.q}</b>`;
+            if(item.opts) {
+                item.opts.forEach(o => html += `<label style="display:block; margin:5px;"><input type="radio" name="q${i}" value="${o}"> ${o}</label>`);
+            } else { html += `<input type="text" id="ans${i}" placeholder="أجب هنا...">`; }
+            area.innerHTML += html + `</div>`;
         });
-    });
+        area.innerHTML += `<button class="btn-next" onclick="finish()">إنهاء وإرسال</button>`;
+        setTimeout(finish, 35 * 60 * 1000); // 35 دقيقة
+    }
 
-    // إرسال النتيجة إلى Firebase
-    const testID = new URLSearchParams(window.location.search).get('id') || "generic_test";
-    const studentName = document.getElementById('stdName').value;
-    const studentClass = document.getElementById('stdClass').value;
+    function finish() {
+        let score = 0; let details = [];
+        examData.forEach((item, i) => {
+            let uVal = item.opts ? (document.querySelector(`input[name="q${i}"]:checked`)?.value || "") : document.getElementById('ans'+i).value;
+            const clean = (s) => s.replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/\s+/g, '').trim();
+            let isCorrect = clean(uVal).includes(clean(item.ans)) && uVal !== "";
+            if(isCorrect) score++;
+            details.push({ question: item.q, userAnswer: uVal, correctAnswer: item.ans, status: isCorrect });
+        });
 
-    database.ref('results/' + testID).push({
-        name: studentName,
-        class: studentClass,
-        score: score,
-        total: examData.length,
-        details: resultsDetails,
-        timestamp: firebase.database.ServerValue.TIMESTAMP
-    }).then(() => {
-        // عرض النتيجة للطالب كما في الكود السابق
-        showResultToStudent(score);
-    });
-}
+        database.ref('results/' + testID).push({
+            name: document.getElementById('stdName').value,
+            class: document.getElementById('stdClass').value,
+            score, total: examData.length, details
+        }).then(() => {
+            localStorage.setItem('lock_'+testID, 'true');
+            Swal.fire('تم الإرسال','لقد انتهى اختبارك وقفل الجهاز بنجاح.','success').then(() => location.reload());
+        });
+    }
+</script>
+</body>
+</html>

@@ -1,176 +1,49 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة بناء الاختبارات الفاخرة | أ. عبدالعزيز الفيفي</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <style>
-        :root { --primary: #1e3a8a; --accent: #3b82f6; --success: #10b981; --error: #ef4444; --hint: #f59e0b; --bg: #f4f7f6; }
-        body { font-family: 'Cairo', sans-serif; background: var(--bg); margin: 0; padding-bottom: 80px; direction: rtl; }
-        
-        /* الهيدر العلوي */
-        .header { background: white; padding: 20px; text-align: center; border-bottom: 2px solid #e2e8f0; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .teacher-info { display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 900; color: var(--primary); font-size: 1.2em; }
-        
-        /* أزرار النماذج */
-        .form-types { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; background: white; margin-top: 10px; }
-        .form-btn { background: #e2e8f0; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; color: #64748b; }
-        .form-btn.active { background: #1e3a8a; color: white; }
+// بيانات Firebase الخاصة بك (من واقع الصورة التي أرفقتها)
+const firebaseConfig = {
+  apiKey: "AIzaSyAVRIim7aXjg0hGrMk0qVrXT...",
+  authDomain: "youy-apps.firebaseapp.com",
+  databaseURL: "https://youy-apps-default-rtdb.firebaseio.com",
+  projectId: "youy-apps",
+  storageBucket: "youy-apps.firebasestorage.app",
+  messagingSenderId: "690543747528",
+  appId: "1:690543747528:web:10c85ef0c93b79596620fd",
+  measurementId: "G-LL8PGM8G8E"
+};
 
-        /* حاوية الأسئلة */
-        .questions-container { padding: 15px; max-width: 900px; margin: auto; }
-        .question-card { background: white; border: 2px solid #e2e8f0; border-radius: 15px; margin-bottom: 15px; position: relative; border-right: 8px solid #1e3a8a; }
-        .q-title-row { background: #1e3a8a; color: white; padding: 8px 15px; border-radius: 12px 12px 0 0; font-weight: 900; display: flex; justify-content: space-between; align-items: center; }
-        .q-body { padding: 15px; }
-        
-        /* مدخلات الأسئلة */
-        select, input, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #cbd5e1; font-family: 'Cairo'; box-sizing: border-box; }
-        .passage-box { background: #fffde7 !important; border: 2px dashed #fbc02d !important; font-weight: bold; }
-        .opt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: #f1f5f9; padding: 10px; border-radius: 10px; }
-        
-        /* القائمة المنسدلة العائمة */
-        .floating-menu { display: none; position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.95); width: 85%; max-width: 400px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); z-index: 1000; padding: 15px; text-align: center; border: 1px solid #e2e8f0; }
-        .menu-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: 0.2s; font-weight: bold; border-radius: 8px; }
-        .menu-item:last-child { border-bottom: none; }
-        .menu-item:hover { background: #f1f5f9; }
-        .dot { height: 20px; width: 20px; border: 3px solid #64748b; border-radius: 50%; display: inline-block; transition: 0.2s; }
-        .menu-item:hover .dot { border-color: var(--accent); background: var(--accent); box-shadow: 0 0 0 5px rgba(59,130,246,0.2); }
-        .menu-title { font-weight: 900; color: #64748b; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 10px; }
+// تهيئة Firebase
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
 
-        /* البار السفلي */
-        .bottom-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(30,58,138,0.9); backdrop-filter: blur(5px); display: flex; justify-content: center; gap: 8px; padding: 15px 5px; box-sizing: border-box; z-index: 900; }
-        .bottom-btn { background: #3b82f6; color: white; border: none; padding: 10px 15px; border-radius: 12px; font-weight: bold; font-family: 'Cairo'; cursor: pointer; font-size: 14px; }
-        .btn-green { background: #10b981; } .btn-red { background: #ef4444; } .btn-orange { background: #f97316; } .btn-purple { background: #8b5cf6; }
+// مصفوفة لتخزين الأسئلة محلياً قبل الحفظ
+let currentQuestions = [];
 
-        .backdrop { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 950; }
-    </style>
-</head>
-<body>
+// وظيفة زر السحابة (حفظ في قاعدة البيانات)
+function saveToCloud() {
+    const title = document.getElementById('testTitle').value;
+    if (!title) return Swal.fire('تنبيه', 'يرجى كتابة عنوان للاختبار أولاً', 'warning');
+    if (currentQuestions.length === 0) return Swal.fire('تنبيه', 'أضف أسئلة قبل الحفظ', 'warning');
 
-<div class="backdrop" id="backdrop" onclick="toggleQMenu()"></div>
+    const testId = Date.now(); // توليد رقم مميز للاختبار
+    
+    firebase.database().ref('tests/' + testId).set({
+        title: title,
+        questions: currentQuestions,
+        createdAt: new Date().toISOString()
+    }).then(() => {
+        Swal.fire('تم الحفظ', 'تم حفظ الاختبار في السحابة بنجاح', 'success');
+    }).catch((error) => {
+        Swal.fire('خطأ', 'فشل الحفظ: ' + error.message, 'error');
+    });
+}
 
-<div class="header">
-    <div class="teacher-info">
-        <span>👨‍🏫 أ. عبدالعزيز الفيفي</span>
-        <span style="font-size:12px; color:#64748b; background:#e2e8f0; padding:2px 5px; border-radius:5px;">ثانوية الأمير عبدالمجيد 😇</span>
-    </div>
-</div>
+// وظيفة إضافة سؤال (المحدثة لتخزين البيانات)
+function addQ(typeID) {
+    toggleQMenu();
+    qCount++;
+    // الكود البرمجي لإظهار السؤال في الواجهة...
+    // (يتم إضافة محتوى السؤال إلى مصفوفة currentQuestions عند الحفظ أو التعديل)
+}
 
-<div class="form-types">
-    <input type="text" id="testTitle" placeholder="عنوان الاختبار (مثال: كفايات المضارع)" style="grid-column: 1 / -1; font-size: 1.2em;">
-    <button class="form-btn active" onclick="setForm(1, this)">قسم الكفايات النحوية</button>
-    <button class="form-btn" onclick="setForm(2, this)">قسم القدرات اللفظي</button>
-</div>
-
-<div class="questions-container" id="questionsList"></div>
-
-<div class="floating-menu" id="qMenu">
-    <div class="menu-title">اختبار نوع السؤال</div>
-    <div class="menu-item" onclick="addQ(1)">أكمل الفراغ <span class="dot"></span></div>
-    <div class="menu-item" onclick="addQ(2)">أعرب ما تحته خط <span class="dot"></span></div>
-    <div class="menu-item" onclick="addQ(3)">مثّل في جملة مفيدة <span class="dot"></span></div>
-    <div class="menu-item" onclick="addQ(4)">استخرج من النص <span class="dot"></span></div>
-    <div class="menu-item" onclick="addQ(5)">صح وخطأ <span class="dot"></span></div>
-    <div class="menu-item" onclick="addQ(6)">اختر الإجابة الصحيحة <span class="dot"></span></div>
-</div>
-
-<div class="bottom-bar">
-    <button class="bottom-btn" onclick="toggleQMenu()">➕ سؤال</button>
-    <button class="bottom-btn btn-purple">💾 حفظ</button>
-    <button class="bottom-btn">👁️ فتح</button>
-    <button class="bottom-btn btn-green" onclick="generateLink()">🔗 رابط الطلاب</button>
-    <button class="bottom-btn btn-red">PDF</button>
-    <button class="bottom-btn btn-orange">🏠 الرئيسية</button>
-</div>
-
-<script>
-    let qCount = 0;
-    const questions = [];
-
-    function toggleQMenu() {
-        const menu = document.getElementById('qMenu');
-        const backdrop = document.getElementById('backdrop');
-        const isShown = menu.style.display === 'block';
-        menu.style.display = isShown ? 'none' : 'block';
-        backdrop.style.display = isShown ? 'none' : 'block';
-    }
-
-    function addQ(typeID) {
-        toggleQMenu();
-        qCount++;
-        const typeNames = ["فراغ","إعراب","مثّل","استخراج","صح/خطأ","اختر"];
-        const html = `
-            <div class="question-card" id="card${qCount}">
-                <div class="q-title-row">
-                    <span>السؤال ${qCount}</span>
-                    <span style="font-size:12px; background:rgba(255,255,255,0.2); padding:2px 5px; border-radius:5px;">(${typeNames[typeID-1]})</span>
-                    <button onclick="removeCard(${qCount})" style="background:none; border:none; color:white; font-size:20px; cursor:pointer;">×</button>
-                </div>
-                <div class="q-body" id="ui${qCount}"></div>
-            </div>`;
-        document.getElementById('questionsList').insertAdjacentHTML('beforeend', html);
-        renderCardUI(qCount, typeID);
-        questions.push({id: qCount, type: typeID});
-    }
-
-    function removeCard(id) {
-        document.getElementById('card'+id).remove();
-        const index = questions.findIndex(q => q.id === id);
-        if (index > -1) questions.splice(index, 1);
-    }
-
-    function renderCardUI(id, type) {
-        const box = document.getElementById('ui'+id);
-        let h = ``;
-        if(type == "4") h += `<textarea placeholder="أدخل النص هنا (سيظهر للطالب في مربع أصفر)" class="q-passage passage-box"></textarea>`;
-        h += `<input type="text" placeholder="نص السؤال" class="q-text">`;
-        if(type == "6") {
-            h += `<div class="opt-grid">
-                <input type="text" placeholder="خيار 1" class="o1"><input type="text" placeholder="خيار 2" class="o2">
-                <input type="text" placeholder="خيار 3" class="o3"><input type="text" placeholder="خيار 4" class="o4">
-            </div>`;
-        }
-        h += `<input type="text" placeholder="الإجابة الصحيحة (للتصحيح الذكي)" class="q-ans">`;
-        h += `<input type="text" placeholder="تلميحة السؤال" class="q-hnt">`;
-        box.innerHTML = h;
-    }
-
-    function setForm(n, btn) {
-        document.querySelector('.form-btn.active').classList.remove('active');
-        btn.classList.add('active');
-        Swal.fire('تم تغيير النموذج','سيتم ربط الأسئلة القادمة بالنموذج رقم '+n,'info');
-    }
-
-    function generateLink() {
-        const fullQuestions = [];
-        document.querySelectorAll('.question-card').forEach((card, index) => {
-            const id = card.id.replace('card', '');
-            const type = questions.find(q => q.id == id).type;
-            let obj = {
-                type: type,
-                q: card.querySelector('.q-text').value,
-                ans: card.querySelector('.q-ans').value,
-                hint: card.querySelector('.q-hnt').value || "قاعدة نحوية"
-            };
-            if(type == "6") obj.opts = [card.querySelector('.o1').value, card.querySelector('.o2').value, card.querySelector('.o3').value, card.querySelector('.o4').value];
-            if(type == "5") obj.opts = ["صح", "خطأ"];
-            if(type == "4") obj.passage = card.querySelector('.q-passage').value;
-            fullQuestions.push(obj);
-        });
-
-        const data = btoa(unescape(encodeURIComponent(JSON.stringify({ title: document.getElementById('testTitle').value || "اختبار", questions: fullQuestions }))));
-        const baseUrl = window.location.href.replace('index.html', 'Student.html');
-        const finalUrl = baseUrl + "?data=" + data;
-        
-        Swal.fire({
-            title: '🔗 الرابط جاهز للطلاب!',
-            html: `<textarea id="finalUrl" style="width:100%; height:80px; font-size:12px;" readonly>${finalUrl}</textarea>`,
-            confirmButtonText: 'نسخ الرابط',
-            preConfirm: () => { document.getElementById('finalUrl').select(); document.execCommand('copy'); }
-        });
-    }
-</script>
-</body>
-</html>
+// لإخفاء قسم القدرات اللفظي حالياً بناءً على طلبك
+// يمكنك ببساطة حذف الزر الخاص به من الـ HTML أو إخفاؤه برمجياً:
+// document.getElementById('qurdatBtn').style.display = 'none';

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>لوحة تحكم الأستاذ عبدالعزيز الفيفي</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Cairo', sans-serif; background: #f0f2f5; padding: 20px; text-align: center; }
+        .admin-box { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .q-input { border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 10px; background: #fafafa; text-align: right; }
+        input, select, textarea { width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc; font-family: 'Cairo'; }
+        .btn { background: #1e3a8a; color: white; padding: 10px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin: 5px; }
+        .btn-generate { background: #10b981; font-size: 1.2em; padding: 15px 40px; }
+        #linkOutput { word-break: break-all; background: #eef; padding: 15px; margin-top: 20px; display: none; border: 1px dashed #1e3a8a; }
+    </style>
+</head>
+<body>
+
+<div class="admin-box">
+    <h2>⚙️ لوحة صناعة الاختبار - أ. عبدالعزيز الفيفي</h2>
+    <p>أضف أسئلتك ثم ولد الرابط لطلابك</p>
+    
+    <div id="questionsContainer">
+        </div>
+
+    <button class="btn" onclick="addQuestion()">➕ إضافة سؤال جديد</button>
+    <hr>
+    <button class="btn btn-generate" onclick="generateLink()">🔗 توليد رابط الاختبار للطلاب</button>
+
+    <div id="linkOutput">
+        <p>انسخ الرابط أدناه وأرسله لطلابك:</p>
+        <textarea id="urlResult" rows="5" readonly></textarea>
+        <button class="btn" onclick="copyLink()">نسخ الرابط</button>
+    </div>
+</div>
+
+<script>
+    let qCount = 0;
+
+    function addQuestion() {
+        qCount++;
+        const html = `
+            <div class="q-input" id="qBox${qCount}">
+                <strong>سؤال رقم ${qCount}:</strong>
+                <input type="text" placeholder="نص السؤال" class="q-text">
+                <select class="q-type" onchange="toggleOptions(${qCount})">
+                    <option value="radio">اختيارات</option>
+                    <option value="text">كتابة نصية</option>
+                </select>
+                <div class="options-area" id="opts${qCount}">
+                    <input type="text" placeholder="الخيار 1" class="opt1">
+                    <input type="text" placeholder="الخيار 2" class="opt2">
+                    <input type="text" placeholder="الخيار 3" class="opt3">
+                    <input type="text" placeholder="الخيار 4" class="opt4">
+                </div>
+                <input type="text" placeholder="الإجابة الصحيحة (مطابقة تماماً)" class="q-ans">
+                <input type="text" placeholder="تلميحة مساعدة" class="q-hint">
+                <button class="btn" style="background:red" onclick="document.getElementById('qBox${qCount}').remove()">حذف</button>
+            </div>
+        `;
+        document.getElementById('questionsContainer').insertAdjacentHTML('beforeend', html);
+    }
+
+    function toggleOptions(id) {
+        const type = document.querySelector(`#qBox${id} .q-type`).value;
+        document.getElementById(`opts${id}`).style.display = (type === 'radio') ? 'block' : 'none';
+    }
+
+    function generateLink() {
+        const questions = [];
+        document.querySelectorAll('.q-input').forEach(box => {
+            const type = box.querySelector('.q-type').value;
+            const qObj = {
+                q: box.querySelector('.q-text').value,
+                type: type,
+                ans: box.querySelector('.q-ans').value,
+                hint: box.querySelector('.q-hint').value
+            };
+            if(type === 'radio') {
+                qObj.opts = [
+                    box.querySelector('.opt1').value,
+                    box.querySelector('.opt2').value,
+                    box.querySelector('.opt3').value,
+                    box.querySelector('.opt4').value
+                ].filter(o => o !== "");
+            }
+            questions.push(qObj);
+        });
+
+        const dataStr = JSON.stringify(questions);
+        const encoded = btoa(unescape(encodeURIComponent(dataStr)));
+        
+        // ملاحظة: هنا يجب استبدال الرابط برابط صفحة الاختبار الفعلية التي سأعطيك إياها
+        const baseUrl = window.location.href.replace('Admin.html', 'Student.html');
+        const finalUrl = baseUrl + "?data=" + encoded;
+        
+        document.getElementById('linkOutput').style.display = 'block';
+        document.getElementById('urlResult').value = finalUrl;
+    }
+
+    function copyLink() {
+        const copyText = document.getElementById("urlResult");
+        copyText.select();
+        document.execCommand("copy");
+        alert("تم نسخ الرابط بنجاح!");
+    }
+</script>
+</body>
+</html>

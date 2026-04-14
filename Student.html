@@ -22,7 +22,7 @@
         .card.active { display: block; animation: slideIn 0.4s ease; }
         @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .q-box { background: #f1f5f9; padding: 20px; border-radius: 15px; margin-bottom: 20px; border-right: 6px solid var(--s-color, #1e3a8a); position: relative; }
-        .passage { background: #fffde7; padding: 15px; border: 1px dashed #fbc02d; border-radius: 10px; margin-bottom: 15px; font-weight: bold; }
+        .passage { background: #fffde7; padding: 15px; border: 1px dashed #fbc02d; border-radius: 10px; margin-bottom: 15px; font-weight: bold; line-height: 1.8; }
         .opt-label { background: white; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 10px; margin-top: 5px; }
         input[type="text"] { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-family: 'Cairo'; margin-top: 10px; }
         .btn-next { background: var(--s-color, #1e3a8a); color: white; padding: 15px; border-radius: 12px; border: none; font-weight: 700; width: 100%; cursor: pointer; margin-top: 20px; }
@@ -32,7 +32,7 @@
 </head>
 <body class="theme-1">
 <script>
-    if (localStorage.getItem('alfaifi_quiz_lock')) {
+    if (localStorage.getItem('alfaifi_quiz_lock_final')) {
         window.stop();
         document.documentElement.innerHTML = `<body style="display:flex; align-items:center; justify-content:center; height:100vh; font-family:'Cairo'; text-align:center;"><div><h1>🛑 وصول مرفوض</h1><p>لقد أنهيت هذا الاختبار مسبقاً.</p><b>أ. عبدالعزيز الفيفي</b></div></body>`;
     }
@@ -40,7 +40,7 @@
 
 <div class="header">
     <h1 id="dynTitle">جاري التحميل...</h1>
-    <p>أستاذ: عبدالعزيز الفيفي - ثانوية الأمير عبدالمجيد 😇</p>
+    <p>إعداد الأستاذ: عبدالعزيز الفيفي - ثانوية الأمير عبدالمجيد 😇</p>
 </div>
 
 <div class="container">
@@ -59,6 +59,7 @@
         <h2 style="text-align:center">تقرير الأداء النهائي</h2>
         <div id="scoreBox" style="text-align:center; font-size:45px; font-weight:900; color:var(--primary);"></div>
         <div style="overflow-x:auto"><table id="sumTable"><thead><tr><th>س</th><th>السؤال</th><th>إجابتك</th><th>النتيجة</th></tr></thead><tbody></tbody></table></div>
+        <p style="text-align:center; margin-top:20px; color:#64748b;">هذا التقرير مرجع لك ولأستاذ المادة.</p>
     </div>
 </div>
 
@@ -67,10 +68,10 @@
     let qPerPage = 7;
     let totalSteps = 0;
     const urlParams = new URLSearchParams(window.location.search);
-    const raw = urlParams.get('data');
+    const data = urlParams.get('data');
     
-    if(raw) {
-        const decoded = JSON.parse(decodeURIComponent(escape(atob(raw))));
+    if(data) {
+        const decoded = JSON.parse(decodeURIComponent(escape(atob(data))));
         examData = decoded.questions;
         document.getElementById('dynTitle').innerText = decoded.title;
         totalSteps = Math.ceil(examData.length / qPerPage);
@@ -80,7 +81,7 @@
     let timer;
 
     function startExam() {
-        if(!document.getElementById('stdName').value || !document.getElementById('stdClass').value) return Swal.fire('تنبيه','أكمل بياناتك','warning');
+        if(!document.getElementById('stdName').value || !document.getElementById('stdClass').value) return Swal.fire('تنبيه','الاسم والفصل مطلوبان','warning');
         buildSections();
         document.getElementById('step0').style.display = 'none';
         document.getElementById('step1').classList.add('active');
@@ -97,23 +98,23 @@
             let end = Math.min(start + qPerPage, examData.length);
             for(let i=start; i<end; i++) {
                 let item = examData[i];
-                let html = `<div class="q-box"><button type="button" class="hint-btn" onclick="Swal.fire('تلميحة','${item.hint}','info')">؟</button>`;
+                let html = `<div class="q-box"><button type="button" style="background:var(--hint); color:white; border:none; border-radius:50%; width:30px; height:30px; float:left; cursor:pointer;" onclick="Swal.fire('تلميحة','${item.hint}','info')">؟</button>`;
                 if(item.passage) html += `<div class="passage">${item.passage}</div>`;
                 html += `<b>س${i+1}: ${item.q}</b>`;
-                if(item.type == "3" || item.type == "5") {
+                if(item.type == "5" || item.type == "6") {
                     html += `<div class="options-grid">`;
                     item.opts.forEach(o => html += `<label class="opt-label"><input type="radio" name="q${i}" value="${o}"> ${o}</label>`);
                     html += `</div>`;
                 } else { html += `<input type="text" id="ans${i}" placeholder="أجب هنا...">`; }
                 card.innerHTML += html + `</div>`;
             }
-            card.innerHTML += `<button type="button" class="btn-next" onclick="${s==totalSteps?'validateAndFinish()':'goStep('+(s+1)+')'}">${s==totalSteps?'إنهاء وإرسال':'التالي ⬅️'}</button>`;
+            card.innerHTML += `<button type="button" class="btn-next" onclick="${s==totalSteps?'validateAndFinish()':'goStep('+(s+1)+')'}">${s==totalSteps?'إنهاء وإرسال الاختبار':'التالي ⬅️'}</button>`;
             cont.appendChild(card);
         }
     }
 
     function goStep(n) {
-        if(!checkStep(n-1)) return;
+        if(!checkInputs(n-1)) return;
         document.querySelector('.card.active').classList.remove('active');
         document.getElementById('step'+n).classList.add('active');
         document.body.className = 'theme-'+((n%6)||6);
@@ -121,13 +122,13 @@
         window.scrollTo(0,0);
     }
 
-    function checkStep(s) {
+    function checkInputs(s) {
         let start = (s-1)*qPerPage;
         let end = Math.min(start + qPerPage, examData.length);
         for(let i=start; i<end; i++) {
-            if(examData[i].type=="3" || examData[i].type=="5") {
-                if(!document.querySelector(`input[name="q${i}"]:checked`)) return Swal.fire('تنبيه','أكمل جميع الأسئلة','error');
-            } else { if(!document.getElementById('ans'+i).value.trim()) return Swal.fire('تنبيه','أكمل جميع الأسئلة','error'); }
+            if(examData[i].type=="5" || examData[i].type=="6") {
+                if(!document.querySelector(`input[name="q${i}"]:checked`)) return Swal.fire('نقص','أكمل إجابة جميع الأسئلة','error');
+            } else { if(!document.getElementById('ans'+i).value.trim()) return Swal.fire('نقص','أكمل إجابة جميع الأسئلة','error'); }
         }
         return true;
     }
@@ -136,23 +137,24 @@
         timer = setInterval(() => {
             let m=Math.floor(timeLeft/60), s=timeLeft%60;
             document.getElementById('clock').innerText = `${m}:${s<10?'0'+s:s}`;
-            if(timeLeft-- <= 0) finish();
+            if(timeLeft-- <= 0) { clearInterval(timer); finish(); }
         }, 1000);
     }
 
-    function validateAndFinish() { if(checkStep(totalSteps)) finish(); }
+    function validateAndFinish() { if(checkInputs(totalSteps)) finish(); }
 
     function finish() {
         let score = 0;
         const tbody = document.querySelector('#sumTable tbody');
         examData.forEach((item, i) => {
-            let uVal = (item.type=="3" || item.type=="5") ? (document.querySelector(`input[name="q${i}"]:checked`)?.value || "لم يحل") : document.getElementById('ans'+i).value;
+            let uVal = (item.type=="5" || item.type=="6") ? (document.querySelector(`input[name="q${i}"]:checked`)?.value || "بدون إجابة") : document.getElementById('ans'+i).value;
             const clean = (s) => s.replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/\s+/g, '').trim();
-            let isCorrect = clean(uVal).includes(clean(item.ans)) && uVal !== "";
+            let isCorrect = clean(uVal).includes(clean(item.ans)) && uVal.trim() !== "";
             if(isCorrect) score++;
-            tbody.innerHTML += `<tr><td>${i+1}</td><td>${item.q}</td><td>${uVal}</td><td>${isCorrect?'✅':'❌'}</td></tr>`;
+            tbody.innerHTML += `<tr><td>${i+1}</td><td>${item.q}</td><td>${uVal}</td><td>${isCorrect?'✅ درجة كاملة':'❌ راجع القاعدة'}</td></tr>`;
         });
-        localStorage.setItem('alfaifi_quiz_lock', 'true');
+        localStorage.setItem('alfaifi_quiz_lock_final', 'true');
+        clearInterval(timer);
         document.getElementById('quizForm').style.display = 'none';
         document.getElementById('resultCard').classList.add('active');
         document.getElementById('scoreBox').innerText = score + ' / ' + examData.length;

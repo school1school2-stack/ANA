@@ -5,55 +5,222 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>اختبار اللغة العربية | ثانوية الأمير عبدالمجيد</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <style>
         :root { --primary: #1e3a8a; --accent: #3b82f6; --bg: #f4f7f6; --success: #10b981; }
         body { font-family: 'Cairo', sans-serif; background: var(--bg); margin: 0; padding-bottom: 50px; direction: rtl; }
         .header { background: var(--primary); color: white; padding: 25px; text-align: center; border-bottom: 5px solid var(--accent); }
         .container { max-width: 800px; margin: 20px auto; padding: 0 15px; }
+        
+        /* بطاقة السؤال */
         .q-card { background: white; padding: 25px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: relative; border-right: 8px solid var(--primary); }
+        
+        /* شارة نوع السؤال */
         .q-type-badge { position: absolute; top: -12px; left: 20px; background: var(--accent); color: white; padding: 4px 15px; border-radius: 8px; font-size: 13px; font-weight: bold; }
-        .passage-box { background: #fff9c4; padding: 15px; border-radius: 12px; border: 2px dashed #fbc02d; margin: 15px 0; font-weight: bold; }
+        
+        /* مربع النص الأصفر للاستخراج */
+        .passage-box { background: #fff9c4; padding: 15px; border-radius: 12px; border: 2px dashed #fbc02d; margin: 15px 0; font-weight: bold; line-height: 1.8; color: #856404; }
+        
+        /* تنسيق الخيارات أ ب ج د */
+        .opt-container { display: flex; align-items: center; margin: 12px 0; cursor: pointer; background: #f8fafc; padding: 12px; border-radius: 10px; border: 1px solid #eee; transition: 0.3s; }
+        .opt-symbol { width: 35px; height: 35px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; border-radius: 50%; margin-left: 15px; font-weight: 900; }
+        .opt-container input { display: none; }
+        .opt-container:has(input:checked) { background: #dbeafe; border-color: var(--accent); }
+
+        /* تنسيق صح وخطأ (أيقونات) */
+        .tf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+        .tf-btn { padding: 15px; border: 2px solid #ddd; border-radius: 12px; text-align: center; cursor: pointer; font-weight: 900; }
+        .tf-btn input { display: none; }
+        .tf-btn:has(input:checked) { background: var(--primary); color: white; border-color: var(--primary); }
+
         input[type="text"] { width: 100%; padding: 15px; border-radius: 10px; border: 1px solid #ccc; font-family: 'Cairo'; margin-top: 15px; box-sizing: border-box; }
         .btn-submit { background: var(--success); color: white; padding: 18px; width: 100%; border: none; border-radius: 15px; font-weight: 900; font-size: 1.3em; cursor: pointer; margin-top: 25px; }
         #timer { position: fixed; top: 15px; left: 15px; background: white; padding: 8px 18px; border-radius: 25px; border: 3px solid var(--primary); font-weight: 900; z-index: 1000; color: var(--primary); }
+        .res-row { border-bottom: 1px solid #eee; padding: 10px 0; display: flex; justify-content: space-between; align-items: center; }
+        .res-q { font-size: 13px; color: #444; flex: 2; text-align: right; }
+        .res-a { font-size: 13px; font-weight: bold; flex: 1; text-align: center; }
+        .res-s { flex: 0.5; text-align: left; }
     </style>
 </head>
 <body>
+
 <div id="timer">35:00</div>
-<div class="header"><h1 id="testTitle">تحميل...</h1><div>أ. عبدالعزيز الفيفي 😇</div></div>
+
+<div class="header">
+    <h1 id="testTitle">تحميل الاختبار...</h1>
+    <div style="font-weight: bold;">أ. عبدالعزيز الفيفي - ثانوية الأمير عبدالمجيد 😇</div>
+</div>
+
 <div class="container">
-    <div id="loginSection" class="q-card"><h3 style="text-align:center;">تسجيل دخول الطالب</h3><input type="text" id="stdName" placeholder="الاسم الكامل"><input type="text" id="stdClass" placeholder="الصف والفصل"><button class="btn-submit" style="background: var(--primary)" onclick="startExam()">ابدأ الاختبار</button></div>
+    <div id="loginSection" class="q-card">
+        <h3 style="text-align:center; color: var(--primary);">تسجيل دخول الطالب</h3>
+        <input type="text" id="stdName" placeholder="الاسم الكامل">
+        <input type="text" id="stdClass" placeholder="الصف والفصل">
+        <button class="btn-submit" style="background: var(--primary)" onclick="startExam()">ابدأ الاختبار الآن</button>
+    </div>
     <div id="quizSection" style="display:none;"></div>
 </div>
+
 <script>
-    const firebaseConfig = { apiKey: "AIzaSyAVRIim7aXjg0hGrMk0qVrXT-10c85ef0c93b79596620fd", authDomain: "youy-apps.firebaseapp.com", databaseURL: "https://youy-apps-default-rtdb.firebaseio.com", projectId: "youy-apps", storageBucket: "youy-apps.firebasestorage.app", messagingSenderId: "690543747528", appId: "1:690543747528:web:10c85ef0c93b79596620fd" };
-    firebase.initializeApp(firebaseConfig); const database = firebase.database();
-    const testID = new URLSearchParams(window.location.search).get('id'); let examData = []; let timeLeft = 35 * 60;
-    if (testID) database.ref('tests/' + testID).once('value', (s) => { const d = s.val(); if(d){ examData = d.questions; document.getElementById('testTitle').innerText = d.title; }});
+    // بيانات الربط بمشروعك Youy-apps
+    const firebaseConfig = {
+        apiKey: "AIzaSyAVRIim7aXjg0hGrMk0qVrXT-10c85ef0c93b79596620fd", 
+        authDomain: "youy-apps.firebaseapp.com",
+        databaseURL: "https://youy-apps-default-rtdb.firebaseio.com",
+        projectId: "youy-apps",
+        storageBucket: "youy-apps.firebasestorage.app",
+        messagingSenderId: "690543747528",
+        appId: "1:690543747528:web:10c85ef0c93b79596620fd"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const testID = urlParams.get('id');
+    let examData = [];
+    let timeLeft = 35 * 60;
+
+    if (testID) {
+        database.ref('tests/' + testID).once('value', (s) => {
+            const d = s.val();
+            if (d) {
+                examData = d.questions;
+                document.getElementById('testTitle').innerText = d.title;
+            }
+        });
+    }
+
     function startExam() {
-        if(!document.getElementById('stdName').value) return; document.getElementById('loginSection').style.display='none'; document.getElementById('quizSection').style.display='block';
+        const name = document.getElementById('stdName').value;
+        const cls = document.getElementById('stdClass').value;
+        if (!name || !cls) return Swal.fire('تنبيه', 'يرجى كتابة الاسم والفصل', 'warning');
+
+        document.getElementById('loginSection').style.display = 'none';
+        const quiz = document.getElementById('quizSection');
+        quiz.style.display = 'block';
+        
         const typeLabels = ["أكمل الفراغ", "إعراب", "تمثيل", "استخراج", "صح وخطأ", "اختيارات"];
+        const symbols = ["أ", "ب", "ج", "د"];
+
         examData.forEach((item, i) => {
             let html = `<div class="q-card"><div class="q-type-badge">${typeLabels[item.type-1]}</div>`;
-            if (item.type == 4 && item.passage) html += `<div class="passage-box">${item.passage}</div>`;
-            html += `<b>س${i+1}: ${item.q}</b><input type="text" id="ans${i}" placeholder="أجب هنا..."></div>`;
-            document.getElementById('quizSection').innerHTML += html;
+            
+            if (item.type == 4 && item.passage) {
+                html += `<div class="passage-box"><b>النص:</b><br>${item.passage}</div>`;
+            }
+
+            html += `<b>س${i+1}: ${item.q}</b>`;
+
+            if (item.type == 6) { 
+                item.opts.forEach((opt, idx) => {
+                    html += `<label class="opt-container"><input type="radio" name="q${i}" value="${opt}"><div class="opt-symbol">${symbols[idx]}</div><span>${opt}</span></label>`;
+                });
+            } else if (item.type == 5) { 
+                html += `<div class="tf-grid"><label class="tf-btn"><input type="radio" name="q${i}" value="صح"> ✅ صح</label><label class="tf-btn"><input type="radio" name="q${i}" value="خطأ"> ❌ خطأ</label></div>`;
+            } else {
+                html += `<input type="text" id="ans${i}" placeholder="أجب هنا...">`;
+            }
+            quiz.innerHTML += html + `</div>`;
         });
-        document.getElementById('quizSection').innerHTML += `<button class="btn-submit" onclick="finish()">إرسال ✅</button>`;
-        setInterval(() => { let m=Math.floor(timeLeft/60), s=timeLeft%60; document.getElementById('timer').innerText=`${m}:${s<10?'0'+s:s}`; if(timeLeft--<=0) finish(); }, 1000);
+
+        quiz.innerHTML += `<button class="btn-submit" onclick="finish()">إرسال وتصحيح الإجابات ✅</button>`;
+        
+        setInterval(() => {
+            let m = Math.floor(timeLeft / 60), s = timeLeft % 60;
+            const timerEl = document.getElementById('timer');
+            if(timerEl) timerEl.innerText = `${m}:${s < 10 ? '0' + s : s}`;
+            if (timeLeft-- <= 0) finish();
+        }, 1000);
     }
+
+    // محرك التصحيح النحوي الذكي المطور بناءً على طلبك
+    function smartJudge(question, studentAnswer, teacherKey) {
+        if(!studentAnswer) return false;
+        // تنظيف النص من الهمزات والتشكيل والمسافات الزائدة
+        const clean = (s) => s.replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/[ًٌٍَُِّ]/g, '').replace(/\s+/g, ' ').trim();
+        const u = clean(studentAnswer);
+        const q = question.toLowerCase();
+
+        // 1. قاعدة الجزم بـ (لم)
+        if (q.includes("جزم بلم") || q.includes("مجزوم بلم") || q.includes("اداه جزم")) {
+            return (u.startsWith("لم") || u.includes(" لم ")) && !u.includes("لن");
+        }
+        
+        // 2. قاعدة النصب بـ (لن)
+        if (q.includes("نصب بلن") || q.includes("منصوب بلن") || q.includes("اداه نصب")) {
+            return (u.startsWith("لن") || u.includes(" لن ")) && !u.includes("لم");
+        }
+
+        // 3. قاعدة الأفعال الخمسة (ثبوت النون)
+        if (q.includes("ثبوت النون") || q.includes("الافعال الخمسه")) {
+            return /(ون|ان|ين)($|\s)/.test(u) && !u.includes("لم") && !u.includes("لن");
+        }
+
+        // 4. قاعدة حذف النون
+        if (q.includes("حذف النون")) {
+            return (u.includes("وا ") || u.endsWith("وا") || u.endsWith("ا") || u.endsWith("ي")) && (u.includes("لم") || u.includes("لن") || u.includes("كي") || u.includes("ان "));
+        }
+
+        // 5. قاعدة الإعراب الذكي
+        if (q.includes("اعراب") || q.includes("اعرب")) {
+            // التحقق من وجود الكلمات النحوية الأساسية في الإجابة
+            const grammarTerms = ["فعل", "مرفوع", "منصوب", "مجزوم", "علامه", "نون", "فتحه", "ضمه", "سكون"];
+            const count = grammarTerms.filter(term => u.includes(term)).length;
+            if(q.includes("يذهبون") || q.includes("يفعلون")) return u.includes("ثبوت النون") && u.includes("مرفوع");
+            return count >= 2; 
+        }
+        
+        // 6. مطابقة مفتاح الأستاذ (لو وجد)
+        if (teacherKey && u.includes(clean(teacherKey))) return true;
+
+        // 7. الحد الأدنى للجملة المفيدة
+        return u.length > 3; 
+    }
+
     function finish() {
-        let score = 0; let details = []; const clean = (s) => s.replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/[ًٌٍَُِّ]/g, '').trim();
+        let score = 0; let details = [];
+        let summaryHtml = `<div style="text-align:right; direction:rtl; font-family:'Cairo';">`;
+
         examData.forEach((item, i) => {
-            let uVal = document.getElementById('ans'+i).value; let u = clean(uVal); let q = item.q.toLowerCase(); let isCorrect = false;
-            if (q.includes("لم")) isCorrect = u.includes("لم"); else if (q.includes("لن")) isCorrect = u.includes("لن"); else if (item.ans && u.includes(clean(item.ans))) isCorrect = true;
-            if (isCorrect) score++; details.push({ question: item.q, userAnswer: uVal, status: isCorrect });
+            let uVal = (item.type == 6 || item.type == 5) ? 
+                (document.querySelector(`input[name="q${i}"]:checked`)?.value || "") : 
+                document.getElementById('ans'+i).value;
+            
+            let isCorrect = smartJudge(item.q, uVal, item.ans);
+            if (isCorrect) score++;
+
+            summaryHtml += `
+                <div class="res-row">
+                    <span class="res-q">س${i+1}: ${item.q.substring(0,35)}...</span>
+                    <span class="res-a" style="color:${isCorrect?'#10b981':'#ef4444'}">${uVal || 'لم يحل'}</span>
+                    <span class="res-s">${isCorrect?'✅':'❌'}</span>
+                </div>`;
+            
+            details.push({ question: item.q, userAnswer: uVal, status: isCorrect });
         });
-        database.ref('results/' + testID).push({ name: document.getElementById('stdName').value, class: document.getElementById('stdClass').value, score: score, total: examData.length, details: details }).then(() => {
-            Swal.fire('تم الإرسال', `درجتك: ${score}/${examData.length}`, 'success').then(() => location.reload());
+
+        summaryHtml += `</div>`;
+
+        database.ref('results/' + testID).push({
+            name: document.getElementById('stdName').value,
+            class: document.getElementById('stdClass').value,
+            score: score, total: examData.length, details: details,
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+        }).then(() => {
+            Swal.fire({
+                title: `تم تحليل إجابتك! درجتك: ${score} من ${examData.length}`,
+                html: `<p style="font-weight:bold; color:var(--primary);">ملخص الأداء:</p>
+                       <div style="max-height:300px; overflow-y:auto; border:1px solid #ddd; padding:10px; border-radius:10px; background:#fff;">
+                       ${summaryHtml}
+                       </div>`,
+                icon: 'success',
+                confirmButtonText: 'إغلاق ومغادرة'
+            }).then(() => location.reload());
         });
     }
 </script>

@@ -3,30 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصة أ. عبدالعزيز الفيفي | ثانوية الأمير عبدالمجيد 😇</title>
+    <title>منصة أ. عبدالعزيز الفيفي | إدارة ذكية</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        :root { --primary: #1e3a8a; --accent: #3b82f6; --bg: #f4f7f6; }
-        body { font-family: 'Cairo', sans-serif; background: var(--bg); margin: 0; padding-bottom: 90px; direction: rtl; }
-        .header { background: white; padding: 15px; border-bottom: 2px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; position: sticky; top:0; z-index:100; }
-        .teacher-box { background: #f1f5f9; padding: 8px 15px; border-radius: 12px; font-weight: 900; color: var(--primary); border: 1px solid #cbd5e1; }
-        .main-content { padding: 15px; max-width: 850px; margin: auto; }
-        #testsManager { display: none; background: #e2e8f0; padding: 15px; border-radius: 20px; margin-bottom: 20px; border: 2px solid var(--primary); }
-        .test-item { background: white; padding: 12px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .q-card { background: white; border-radius: 15px; margin-bottom: 15px; border-right: 8px solid var(--primary); overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .q-head { background: var(--primary); color: white; padding: 10px 15px; display: flex; justify-content: space-between; }
-        input, textarea { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: 1px solid #cbd5e1; font-family: 'Cairo'; box-sizing: border-box; }
-        .bottom-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(30, 58, 138, 0.95); padding: 12px 5px; display: flex; justify-content: center; gap: 8px; z-index: 1000; }
-        .bar-btn { flex: 1; max-width: 90px; padding: 10px 5px; border-radius: 10px; border: none; color: white; font-weight: bold; cursor: pointer; font-size: 11px; }
-        #resultsModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; overflow-y: auto; padding: 20px; box-sizing: border-box; }
-        .q-menu { display: none; position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: white; width: 90%; max-width: 350px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); z-index: 1100; padding: 10px; border: 1px solid #ddd; }
-        .menu-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; font-weight: bold; text-align: center; }
-        .overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1050; }
+        :root { --primary: #1e3a8a; --accent: #3b82f6; --success: #10b981; --error: #ef4444; --bg: #f4f7f6; }
+        body { font-family: 'Cairo', sans-serif; background: var(--bg); margin: 0; padding-bottom: 100px; direction: rtl; overflow-x: hidden; }
+        
+        /* الهيدر العلوي */
+        .header { background: white; padding: 15px 25px; border-bottom: 2px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; position: sticky; top:0; z-index:1000; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .teacher-info { background: #f1f5f9; padding: 8px 20px; border-radius: 50px; font-weight: 900; color: var(--primary); border: 2px solid #cbd5e1; display: flex; align-items: center; gap: 8px; }
+        
+        .main-container { max-width: 850px; margin: 20px auto; padding: 0 15px; }
+        
+        /* مدير النماذج المحفوظة */
+        #testsManager { display: none; background: white; padding: 20px; border-radius: 20px; margin-bottom: 25px; border: 3px solid var(--primary); box-shadow: 0 10px 30px rgba(0,0,0,0.1); position: relative; z-index: 1001; }
+        .test-item { background: #f8fafc; padding: 15px; border-radius: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; border-right: 6px solid var(--primary); transition: 0.3s; }
+        .test-item:hover { transform: scale(1.01); background: #f1f5f9; }
+
+        /* منطقة الأسئلة */
+        .q-card { background: white; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); border-right: 10px solid var(--primary); overflow: hidden; animation: slideUp 0.4s ease; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .q-head { background: var(--primary); color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
+        .q-body { padding: 20px; }
+        
+        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #cbd5e1; font-family: 'Cairo'; box-sizing: border-box; font-size: 15px; }
+        .passage-area { background: #fffde7 !important; border: 2px dashed #fbc02d !important; font-weight: bold; min-height: 100px; }
+        .opt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #f1f5f9; padding: 15px; border-radius: 12px; margin: 10px 0; }
+
+        /* القائمة المنسدلة العائمة (المطابقة لطلبك) */
+        .q-menu { display: none; position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: white; width: 90%; max-width: 380px; border-radius: 25px; box-shadow: 0 15px 50px rgba(0,0,0,0.3); z-index: 10000; padding: 15px; border: 1px solid #ddd; }
+        .menu-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f1f5f9; cursor: pointer; font-weight: bold; font-size: 1.1em; transition: 0.2s; border-radius: 12px; }
+        .menu-item:hover { background: #f1f5f9; color: var(--accent); }
+        .menu-item:last-child { border-bottom: none; }
+        .dot { height: 20px; width: 20px; border: 3px solid #ddd; border-radius: 50%; }
+        .menu-item:hover .dot { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 10px var(--accent); }
+
+        /* البار السفلي */
+        .bottom-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(30, 58, 138, 0.95); backdrop-filter: blur(10px); padding: 15px 10px; display: flex; justify-content: center; gap: 8px; z-index: 9000; }
+        .bar-btn { flex: 1; max-width: 100px; padding: 10px 5px; border-radius: 12px; border: none; color: white; font-weight: bold; cursor: pointer; font-size: 12px; font-family: 'Cairo'; transition: 0.2s; }
+        .bar-btn:active { transform: scale(0.9); }
+
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9500; backdrop-filter: blur(3px); }
+        #resultsModal { display: none; position: fixed; top: 2%; left: 2%; width: 96%; height: 96%; background: white; z-index: 11000; overflow-y: auto; border-radius: 25px; padding: 25px; }
     </style>
 </head>
 <body>
@@ -34,47 +58,59 @@
 <div class="overlay" id="overlay" onclick="closeAllPanels()"></div>
 
 <div class="header">
-    <div class="teacher-box">أ. عبدالعزيز الفيفي 😇</div>
-    <div style="font-weight: bold; color: var(--primary);">ثانوية الأمير عبدالمجيد</div>
+    <div class="teacher-info">أ. عبدالعزيز الفيفي 😇</div>
+    <div style="font-weight: 900; color: var(--primary); font-size: 0.9em;">ثانوية الأمير عبدالمجيد</div>
 </div>
 
-<div class="main-content">
+<div class="main-container">
     <div id="testsManager">
-        <h3 style="text-align:center;">📂 النماذج المحفوظة</h3>
-        <div id="testsList">جاري التحميل...</div>
+        <h3 style="text-align:center; color: var(--primary); border-bottom: 2px solid #ddd; padding-bottom: 10px;">📂 نماذجي المحفوظة</h3>
+        <div id="testsList" style="max-height: 400px; overflow-y: auto;">جاري تحميل البيانات...</div>
     </div>
-    <input type="text" id="testTitle" placeholder="أدخل عنوان النموذج (مثلاً: قواعد النحو)" style="font-size: 1.2em; border: 2px solid var(--primary);">
-    <div id="questionsContainer"></div>
+
+    <input type="text" id="testTitle" placeholder="أدخل عنوان النموذج الجديد هنا..." style="font-size: 1.3em; font-weight: 900; border: 2px solid var(--primary); margin-bottom: 20px; text-align: center;">
+    
+    <div id="questionsContainer">
+        </div>
 </div>
 
 <div class="q-menu" id="qMenu">
-    <div class="menu-item" onclick="addQuestion(1)">أكمل الفراغ ⚪</div>
-    <div class="menu-item" onclick="addQuestion(2)">أعرب ما تحته خط ✏️</div>
-    <div class="menu-item" onclick="addQuestion(3)">مثّل في جملة مفيدة 💬</div>
-    <div class="menu-item" onclick="addQuestion(6)">اختر الإجابة الصحيحة 🔘</div>
-</div>
-
-<div id="resultsModal">
-    <button onclick="document.getElementById('resultsModal').style.display='none'" style="background:red; color:white; border:none; padding:10px; border-radius:8px; cursor:pointer;">إغلاق ×</button>
-    <h2 id="resTitle" style="text-align:center;">تحليل النتائج والبيانات</h2>
-    <div style="max-width:300px; margin:auto;"><canvas id="statsChart"></canvas></div>
-    <table style="width:100%; border-collapse: collapse; margin-top:20px; text-align:center;">
-        <thead><tr style="background:var(--primary); color:white;"><th>الطالب</th><th>الفصل</th><th>الدرجة</th><th>تفاصيل</th></tr></thead>
-        <tbody id="resultsBody"></tbody>
-    </table>
+    <div style="text-align:center; font-weight:900; color:#64748b; margin-bottom:10px;">اختر نوع السؤال الجديد</div>
+    <div class="menu-item" onclick="addQuestion(1)">أكمل الفراغ <span class="dot"></span></div>
+    <div class="menu-item" onclick="addQuestion(2)">أعرب ما تحته خط <span class="dot"></span></div>
+    <div class="menu-item" onclick="addQuestion(3)">مثّل في جملة مفيدة <span class="dot"></span></div>
+    <div class="menu-item" onclick="addQuestion(4)">استخرج من النص <span class="dot"></span></div>
+    <div class="menu-item" onclick="addQuestion(5)">صح وخطأ <span class="dot"></span></div>
+    <div class="menu-item" onclick="addQuestion(6)">اختر الإجابة الصحيحة <span class="dot"></span></div>
 </div>
 
 <div class="bottom-bar">
     <button class="bar-btn" style="background:#3b82f6" onclick="toggleMenu()">➕ سؤال</button>
     <button class="bar-btn" style="background:#8b5cf6" onclick="saveToCloud()">💾 حفظ</button>
-    <button class="bar-btn" style="background:#10b981" onclick="openTestsList()">📂 النماذج</button>
+    <button class="bar-btn" style="background:#3b82f6" onclick="openTestsList()">📂 النماذج</button>
+    <button class="bar-btn" style="background:#10b981" onclick="generateLink()">🔗 الرابط</button>
     <button class="bar-btn" style="background:#ef4444" onclick="location.reload()">🏠 الرئيسية</button>
 </div>
 
+<div id="resultsModal">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2 id="resTitle">تحليل النتائج</h2>
+        <button onclick="closeResults()" style="background:red; color:white; border:none; padding:10px 20px; border-radius:12px; cursor:pointer; font-weight:bold;">إغلاق ×</button>
+    </div>
+    <hr>
+    <div style="max-width:300px; margin:20px auto;"><canvas id="statsChart"></canvas></div>
+    <div id="studentsTableContainer" style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; margin-top:20px;">
+            <thead><tr style="background:var(--primary); color:white;"><th>اسم الطالب</th><th>الفصل</th><th>الدرجة</th><th>التفاصيل</th></tr></thead>
+            <tbody id="resultsBody"></tbody>
+        </table>
+    </div>
+</div>
+
 <script>
-    // إعدادات Firebase
+    // --- تكوين Firebase (بياناتك) ---
     const firebaseConfig = {
-        apiKey: "AIzaSyAVRIim7aXjg0hGrMk0qVrXT...", 
+        apiKey: "AIzaSyAVRIim7aXjg0hGrMk0qVrXT...", // يرجى وضع كودك بالكامل هنا
         authDomain: "youy-apps.firebaseapp.com",
         databaseURL: "https://youy-apps-default-rtdb.firebaseio.com",
         projectId: "youy-apps",
@@ -84,88 +120,169 @@
     };
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
-    let qCount = 0; let currentTestID = null; let myChart = null;
+    
+    let qCount = 0; 
+    let currentTestID = null; 
+    let myChart = null;
 
-    function toggleMenu() {
-        document.getElementById('qMenu').style.display = 'block';
-        document.getElementById('overlay').style.display = 'block';
-    }
-
+    // إغلاق شامل للقوائم
     function closeAllPanels() {
         document.getElementById('qMenu').style.display = 'none';
         document.getElementById('testsManager').style.display = 'none';
         document.getElementById('overlay').style.display = 'none';
     }
 
+    // فتح قائمة أنواع الأسئلة
+    function toggleMenu() {
+        closeAllPanels();
+        document.getElementById('qMenu').style.display = 'block';
+        document.getElementById('overlay').style.display = 'block';
+    }
+
+    // إضافة سؤال (يدعم الـ 6 أنواع)
     function addQuestion(type, data = null) {
-        closeAllPanels(); qCount++;
+        closeAllPanels();
+        qCount++;
+        const typeNames = ["أكمل الفراغ", "أعرب ما تحته خط", "تمثيل", "استخراج من نص", "صح وخطأ", "اختيارات"];
         const html = `
             <div class="q-card" id="qCard${qCount}" data-type="${type}">
-                <div class="q-head"><span>س ${qCount}</span><button onclick="this.parentElement.parentElement.remove()" style="background:none; border:none; color:white; cursor:pointer;">×</button></div>
+                <div class="q-head">
+                    <span>السؤال ${qCount} - ${typeNames[type-1]}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" style="background:none; border:none; color:white; font-size:22px; cursor:pointer;">×</button>
+                </div>
                 <div class="q-body">
-                    <input type="text" class="q-text" placeholder="نص السؤال" value="${data ? data.q : ''}">
-                    <input type="text" class="q-ans" placeholder="الإجابة الصحيحة (للتصحيح الذكي)" value="${data ? data.ans : ''}">
+                    ${type == 4 ? `<textarea class="passage-area" placeholder="أدخل النص هنا (سيظهر للطالب باللون الأصفر)...">${data ? data.passage : ''}</textarea>` : ''}
+                    <input type="text" class="q-text" placeholder="اكتب نص السؤال هنا..." value="${data ? data.q : ''}">
+                    ${type == 6 ? `
+                        <div class="opt-grid">
+                            <input type="text" class="o1" placeholder="خيار أ" value="${data?.opts?.[0] || ''}">
+                            <input type="text" class="o2" placeholder="خيار ب" value="${data?.opts?.[1] || ''}">
+                            <input type="text" class="o3" placeholder="خيار ج" value="${data?.opts?.[2] || ''}">
+                            <input type="text" class="o4" placeholder="خيار د" value="${data?.opts?.[3] || ''}">
+                        </div>` : ''}
+                    <input type="text" class="q-ans" placeholder="الإجابة الصحيحة أو الكلمة المفتاحية (للتصحيح الذكي)" value="${data ? data.ans : ''}">
                 </div>
             </div>`;
         document.getElementById('questionsContainer').insertAdjacentHTML('beforeend', html);
     }
 
+    // حفظ في السحابة
     function saveToCloud() {
         const title = document.getElementById('testTitle').value;
         const questions = [];
         document.querySelectorAll('.q-card').forEach(card => {
-            questions.push({ q: card.querySelector('.q-text').value, ans: card.querySelector('.q-ans').value, type: card.dataset.type });
+            const type = card.getAttribute('data-type');
+            let obj = { type, q: card.querySelector('.q-text').value, ans: card.querySelector('.q-ans').value };
+            if(type == 6) obj.opts = [card.querySelector('.o1').value, card.querySelector('.o2').value, card.querySelector('.o3').value, card.querySelector('.o4').value];
+            if(type == 4) obj.passage = card.querySelector('.passage-area').value;
+            questions.push(obj);
         });
-        if(!title || questions.length === 0) return Swal.fire('تنبيه','أكمل البيانات','warning');
+
+        if(!title || questions.length === 0) return Swal.fire('تنبيه','يرجى إكمال عنوان الاختبار والأسئلة','warning');
+        
         currentTestID = currentTestID || Date.now();
-        database.ref('tests/' + currentTestID).set({ title, questions }).then(() => Swal.fire('تم الحفظ','تم تخزين النموذج بنجاح','success'));
+        database.ref('tests/' + currentTestID).set({ title, questions, timestamp: firebase.database.ServerValue.TIMESTAMP })
+        .then(() => Swal.fire('نجاح','تم حفظ النموذج في السحابة','success'));
     }
 
+    // فتح قائمة النماذج
     function openTestsList() {
+        closeAllPanels();
         document.getElementById('testsManager').style.display = 'block';
         document.getElementById('overlay').style.display = 'block';
-        database.ref('tests').once('value', (s) => {
-            const data = s.val(); const list = document.getElementById('testsList'); list.innerHTML = '';
-            for(let id in data) {
+        
+        database.ref('tests').on('value', (s) => {
+            const data = s.val();
+            const list = document.getElementById('testsList');
+            list.innerHTML = '';
+            if(!data) { list.innerHTML = '<p style="text-align:center;">لا توجد نماذج محفوظة</p>'; return; }
+            
+            Object.keys(data).forEach(id => {
                 list.innerHTML += `
                     <div class="test-item">
-                        <span>${data[id].title}</span>
-                        <div>
+                        <div style="font-weight:900; color:var(--primary); font-size:1.1em;">📁 ${data[id].title}</div>
+                        <div style="display:flex; gap:5px;">
                             <button class="bar-btn" style="background:#10b981; max-width:60px;" onclick="copyLink('${id}')">رابط</button>
                             <button class="bar-btn" style="background:#f59e0b; max-width:60px;" onclick="viewResults('${id}')">نتائج</button>
+                            <button class="bar-btn" style="background:#3b82f6; max-width:60px;" onclick="editTest('${id}')">تعديل</button>
+                            <button class="bar-btn" style="background:red; max-width:30px;" onclick="deleteTest('${id}')">🗑️</button>
                         </div>
                     </div>`;
+            });
+        });
+    }
+
+    // حذف نموذج
+    function deleteTest(id) {
+        Swal.fire({ title: 'هل أنت متأكد؟', text: "سيتم حذف الاختبار ونتائج الطلاب نهائياً!", icon: 'warning', showCancelButton: true, confirmButtonText: 'حذف', cancelButtonText: 'إلغاء' })
+        .then((res) => {
+            if(res.isConfirmed) {
+                database.ref('tests/' + id).remove();
+                database.ref('results/' + id).remove();
+                Swal.fire('تم الحذف','تمت إزالة النموذج بنجاح','success');
             }
         });
     }
 
+    // تعديل نموذج
+    function editTest(id) {
+        database.ref('tests/' + id).once('value', (s) => {
+            const data = s.val();
+            if(!data) return;
+            currentTestID = id;
+            document.getElementById('testTitle').value = data.title;
+            document.getElementById('questionsContainer').innerHTML = '';
+            qCount = 0;
+            data.questions.forEach(q => addQuestion(q.type, q));
+            closeAllPanels();
+        });
+    }
+
+    // توليد رابط الطالب
     function copyLink(id) {
-        const studentUrl = window.location.href.replace('Admin.html', 'Student.html') + "?id=" + id;
-        Swal.fire({ title: 'رابط الطالب', html: `<input id="copyInp" value="${studentUrl}" style="width:100%; text-align:center;">`, confirmButtonText: 'نسخ' }).then(() => {
-            document.getElementById('copyInp').select(); document.execCommand('copy');
-        });
+        const studentUrl = window.location.href.replace('Admin.html', 'Student.html').replace('index.html', 'Student.html').split('?')[0] + "?id=" + id;
+        Swal.fire({ title: 'رابط الطالب جاهز', html: `<input id="sw-link" value="${studentUrl}" style="width:100%; text-align:center; padding:10px;">`, confirmButtonText: 'نسخ' })
+        .then(() => { document.getElementById('sw-link').select(); document.execCommand('copy'); });
     }
 
-    function viewResults(testID) {
+    function generateLink() {
+        if(!currentTestID) return Swal.fire('تنبيه','احفظ الاختبار أولاً لتوليد الرابط','warning');
+        copyLink(currentTestID);
+    }
+
+    // --- نظام النتائج المطور ---
+    function viewResults(id) {
         document.getElementById('resultsModal').style.display = 'block';
-        database.ref('results/' + testID).on('value', (s) => {
-            const resData = s.val(); const body = document.getElementById('resultsBody'); body.innerHTML = '';
-            let stats = { ممتاز: 0, جيد: 0, ضعيف: 0 };
-            for(let key in resData) {
-                const res = resData[key];
-                const p = (res.score / res.total) * 100;
-                if(p >= 85) stats.ممتاز++; else if(p >= 50) stats.جيد++; else stats.ضعيف++;
-                body.innerHTML += `<tr><td>${res.name}</td><td>${res.class}</td><td>${res.score}/${res.total}</td><td><button onclick="Swal.fire('التفاصيل','${res.name} حل الاختبار بنجاح','info')">👁️</button></td></tr>`;
-            }
-            updateChart(stats);
+        database.ref('results/' + id).on('value', (snapshot) => {
+            const data = snapshot.val();
+            const body = document.getElementById('resultsBody');
+            body.innerHTML = '';
+            let scores = { ممتاز: 0, جيد: 0, ضعيف: 0 };
+            
+            if(!data) { body.innerHTML = '<tr><td colspan="4">لا توجد إجابات بعد</td></tr>'; return; }
+            
+            Object.values(data).forEach(res => {
+                const perc = (res.score / res.total) * 100;
+                if(perc >= 85) scores.ممتاز++; else if(perc >= 50) scores.جيد++; else scores.ضعيف++;
+                body.innerHTML += `<tr><td>${res.name}</td><td>${res.class}</td><td>${res.score}/${res.total}</td><td><button onclick='showDetails(${JSON.stringify(res.details)})'>👁️</button></td></tr>`;
+            });
+            drawChart(scores);
         });
     }
 
-    function updateChart(s) {
+    function drawChart(s) {
         const ctx = document.getElementById('statsChart').getContext('2d');
         if(myChart) myChart.destroy();
-        myChart = new Chart(ctx, { type: 'doughnut', data: { labels: ['ممتاز', 'جيد', 'ضعيف'], datasets: [{ data: [s.ممتاز, s.جيد, s.ضعيف], backgroundColor: ['#10b981', '#f59e0b', '#ef4444'] }] } });
+        myChart = new Chart(ctx, { type: 'pie', data: { labels: ['ممتاز', 'جيد', 'ضعيف'], datasets: [{ data: [s.ممتاز, s.جيد, s.ضعيف], backgroundColor: ['#10b981', '#f59e0b', '#ef4444'] }] } });
     }
+
+    function showDetails(details) {
+        let html = '<div style="text-align:right; font-family:Cairo;">';
+        details.forEach(d => html += `<p><b>س: ${d.question}</b><br>إجابة الطالب: <span style="color:${d.status?'green':'red'}">${d.userAnswer}</span><br>النتيجة: ${d.status?'✅ صحيح':'❌ خطأ'}</p><hr>`);
+        Swal.fire({ title: 'تحليل إجابات الطالب', html: html + '</div>', width: '90%' });
+    }
+
+    function closeResults() { document.getElementById('resultsModal').style.display = 'none'; }
 </script>
 </body>
 </html>

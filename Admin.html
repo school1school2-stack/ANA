@@ -2,111 +2,109 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>بناء اختبار مخصص | أ. عبدالعزيز الفيفي</title>
+    <title>لوحة التحكم | أ. عبدالعزيز الفيفي</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Cairo', sans-serif; background: #f0f4f8; padding: 20px; direction: rtl; }
-        .admin-box { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
-        .q-card { background: #f8fafc; border: 2px solid #e2e8f0; padding: 15px; margin-top: 15px; border-radius: 10px; position: relative; border-right: 6px solid #1e3a8a; }
-        select, input, textarea { width: 100%; padding: 10px; margin: 5px 0; border-radius: 6px; border: 1px solid #cbd5e1; font-family: 'Cairo'; box-sizing: border-box; }
-        .yellow-bg { background: #fffde7 !important; border: 2px dashed #fbc02d !important; }
-        .btn-add { background: #1e3a8a; color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin: 10px 0; }
-        .btn-gen { background: #10b981; color: white; padding: 20px; width: 100%; border: none; border-radius: 10px; font-size: 1.2em; cursor: pointer; font-weight: bold; margin-top: 30px; }
-        .delete-q { position: absolute; left: 10px; top: 10px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; }
-        .section-marker { background: #e2e8f0; padding: 5px 15px; border-radius: 5px; font-weight: bold; margin-top: 20px; display: inline-block; }
+        body { font-family: 'Cairo', sans-serif; background: #f4f7f6; padding: 20px; direction: rtl; }
+        .admin-container { max-width: 900px; margin: auto; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .question-card { background: #fff; border: 2px solid #e2e8f0; padding: 20px; border-radius: 15px; margin-bottom: 15px; position: relative; border-right: 8px solid #1e3a8a; }
+        select, input, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #cbd5e1; font-family: 'Cairo'; box-sizing: border-box; }
+        .passage-input { background: #fff9c4 !important; border: 2px dashed #fbc02d !important; }
+        .btn-add { background: #1e3a8a; color: white; padding: 12px 25px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; margin: 10px 0; }
+        .btn-generate { background: #10b981; color: white; padding: 18px; width: 100%; border: none; border-radius: 12px; font-size: 1.2em; cursor: pointer; font-weight: 700; margin-top: 30px; }
+        .del-q { position: absolute; left: 15px; top: 15px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; }
+        .options-box { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #f1f5f9; padding: 10px; border-radius: 10px; }
     </style>
 </head>
 <body>
 
-<div class="admin-box">
-    <h2 style="text-align: center; color: #1e3a8a;">🏗️ بناء اختبار مخصص (مرن)</h2>
+<div class="admin-container">
+    <h2 style="text-align:center; color:#1e3a8a;">🏗️ صانع الاختبارات المرن والذكي</h2>
     <input type="text" id="testTitle" placeholder="أدخل عنوان الاختبار (مثلاً: كفايات الهمزة)" style="font-size: 1.4em; border-bottom: 3px solid #1e3a8a;">
     
-    <div id="questionsList"></div>
+    <div id="questionsWrapper"></div>
 
-    <button class="btn-add" onclick="addNewQuestion()">➕ إضافة سؤال جديد</button>
+    <button class="btn-add" onclick="createQuestion()">➕ إضافة سؤال جديد</button>
     
-    <hr style="margin: 30px 0;">
-    <button class="btn-gen" onclick="generateTestLink()">🔗 توليد رابط الاختبار للطلاب</button>
+    <button class="btn-generate" onclick="generateLink()">🔗 توليد رابط الاختبار للطلاب</button>
     
-    <div id="resultArea" style="display:none; margin-top:30px; padding: 20px; background: #e0f2f1; border-radius: 10px;">
-        <p><b>رابط الاختبار جاهز! انسخه وأرسله للطلاب:</b></p>
-        <textarea id="finalUrl" style="height:100px; color: #1e3a8a;" readonly></textarea>
-        <button class="btn-add" style="background:#00796b; width:100%" onclick="copyText()">نسخ الرابط</button>
+    <div id="linkResult" style="display:none; margin-top:30px; padding: 20px; background: #e0f2f1; border-radius: 15px;">
+        <p><b>انسخ الرابط وأرسله لطلابك:</b></p>
+        <textarea id="outputUrl" style="height:100px; color: #1e3a8a;" readonly></textarea>
+        <button class="btn-add" style="background:#00796b; width:100%" onclick="copyLink()">نسخ الرابط</button>
     </div>
 </div>
 
 <script>
-    let qCount = 0;
-    const types = [
-        {id: 1, name: "مثّل في جملة مفيدة"},
-        {id: 2, name: "أكمل الفراغ"},
-        {id: 3, name: "اختر الإجابة الصحيحة (4 خيارات)"},
-        {id: 4, name: "أعرب ما تحته خط"},
-        {id: 5, name: "صح وخطأ"},
-        {id: 6, name: "استخرج من النص (نص + سؤال)"}
+    let qID = 0;
+    const qTypes = [
+        {v: 1, n: "أكمل الفراغ"},
+        {v: 2, n: "أعرب ما تحته خط"},
+        {v: 3, n: "مثّل في جملة مفيدة"},
+        {v: 4, n: "استخرج من النص"},
+        {v: 5, n: "صح وخطأ"},
+        {v: 6, n: "اختر الإجابة الصحيحة"}
     ];
 
-    function addNewQuestion() {
-        qCount++;
+    function createQuestion() {
+        qID++;
         const html = `
-            <div class="q-card" id="qContainer${qCount}">
-                <button class="delete-q" onclick="removeQ(${qCount})">×</button>
-                <b>سؤال رقم ${qCount}:</b>
-                <select onchange="updateUI(${qCount})" id="type${qCount}">
-                    ${types.map(t => `<option value="${t.id}">${t.name}</option>`).join('')}
+            <div class="question-card" id="card${qID}">
+                <button class="del-q" onclick="removeCard(${qID})">×</button>
+                <b>السؤال رقم ${qID}:</b>
+                <select onchange="renderUI(${qID})" id="sel${qID}">
+                    ${qTypes.map(t => `<option value="${t.v}">${t.n}</option>`).join('')}
                 </select>
-                <div id="fields${qCount}"></div>
+                <div id="ui${qID}"></div>
             </div>`;
-        document.getElementById('questionsList').insertAdjacentHTML('beforeend', html);
-        updateUI(qCount);
+        document.getElementById('questionsWrapper').insertAdjacentHTML('beforeend', html);
+        renderUI(qID);
     }
 
-    function removeQ(id) { document.getElementById('qContainer'+id).remove(); }
+    function removeCard(id) { document.getElementById('card'+id).remove(); }
 
-    function updateUI(idx) {
-        const type = document.getElementById('type'+idx).value;
-        const box = document.getElementById('fields'+idx);
-        let html = ``;
-        if(type == "6") html += `<textarea placeholder="ضع النص هنا (سيظهر للطالب في مربع أصفر)" class="q-passage yellow-bg"></textarea>`;
-        html += `<input type="text" placeholder="نص السؤال" class="q-text">`;
-        if(type == "3") {
-            html += `<div style="display:grid; grid-template-columns:1fr 1fr; gap:5px;">
+    function renderUI(id) {
+        const type = document.getElementById('sel'+id).value;
+        const box = document.getElementById('ui'+id);
+        let content = ``;
+        if(type == "4") content += `<textarea placeholder="ضع النص هنا..." class="q-passage passage-input"></textarea>`;
+        content += `<input type="text" placeholder="نص السؤال" class="q-text">`;
+        if(type == "6") {
+            content += `<div class="options-box">
                 <input type="text" placeholder="خيار 1" class="o1"><input type="text" placeholder="خيار 2" class="o2">
                 <input type="text" placeholder="خيار 3" class="o3"><input type="text" placeholder="خيار 4" class="o4">
             </div>`;
         }
-        html += `<input type="text" placeholder="الإجابة الصحيحة (للتصحيح الذكي)" class="q-ans">`;
-        html += `<input type="text" placeholder="تلميحة السؤال" class="q-hnt">`;
-        box.innerHTML = html;
+        content += `<input type="text" placeholder="الإجابة الصحيحة (للتصحيح الذكي)" class="q-ans">`;
+        content += `<input type="text" placeholder="تلميحة السؤال" class="q-hnt">`;
+        box.innerHTML = content;
     }
 
-    function generateTestLink() {
+    function generateLink() {
         const questions = [];
-        document.querySelectorAll('.q-card').forEach((card, index) => {
-            const id = card.id.replace('qContainer', '');
-            const type = document.getElementById('type'+id).value;
+        document.querySelectorAll('.question-card').forEach((card) => {
+            const id = card.id.replace('card', '');
+            const type = document.getElementById('sel'+id).value;
             let obj = {
                 type: type,
                 q: card.querySelector('.q-text').value,
                 ans: card.querySelector('.q-ans').value,
                 hint: card.querySelector('.q-hnt').value
             };
-            if(type == "3") obj.opts = [card.querySelector('.o1').value, card.querySelector('.o2').value, card.querySelector('.o3').value, card.querySelector('.o4').value];
+            if(type == "6") obj.opts = [card.querySelector('.o1').value, card.querySelector('.o2').value, card.querySelector('.o3').value, card.querySelector('.o4').value];
             if(type == "5") obj.opts = ["صح", "خطأ"];
-            if(type == "6") obj.passage = card.querySelector('.q-passage').value;
+            if(type == "4") obj.passage = card.querySelector('.q-passage').value;
             questions.push(obj);
         });
 
-        const data = { title: document.getElementById('testTitle').value || "اختبار", questions: questions };
-        const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+        const data = btoa(unescape(encodeURIComponent(JSON.stringify({ title: document.getElementById('testTitle').value, questions: questions }))));
         const baseUrl = window.location.href.replace('Admin.html', 'Student.html');
-        document.getElementById('finalUrl').value = baseUrl + "?data=" + encoded;
-        document.getElementById('resultArea').style.display = 'block';
+        document.getElementById('outputUrl').value = baseUrl + "?data=" + data;
+        document.getElementById('linkResult').style.display = 'block';
     }
 
-    function copyText() {
-        document.getElementById("finalUrl").select();
+    function copyLink() {
+        document.getElementById("outputUrl").select();
         document.execCommand("copy");
         alert("تم نسخ الرابط!");
     }

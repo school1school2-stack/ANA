@@ -3,66 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>اختبار الطالب</title>
+    <title>اختبار الطالب | ثانوية الأمير عبدالمجيد</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <style>
-        body { font-family: 'Cairo', sans-serif; background: #f0f4f8; margin: 0; direction: rtl; }
-        .container { max-width: 600px; margin: 20px auto; padding: 20px; background: white; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        .q-box { background: #f8fafc; padding: 15px; border-radius: 12px; margin-bottom: 15px; border-right: 5px solid #1e3a8a; }
-        input { width: 100%; padding: 12px; margin-top: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
-        .btn { background: #1e3a8a; color: white; padding: 15px; width: 100%; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        :root { --primary: #1e3a8a; --bg: #f8fafc; }
+        body { font-family: 'Cairo', sans-serif; background: var(--bg); margin: 0; direction: rtl; }
+        .header { background: var(--primary); color: white; padding: 25px; text-align: center; border-bottom: 5px solid #3b82f6; }
+        .container { max-width: 800px; margin: 20px auto; padding: 0 15px; }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .q-box { background: #f1f5f9; padding: 15px; border-radius: 12px; margin-bottom: 15px; border-right: 6px solid var(--primary); }
+        input { width: 100%; padding: 12px; margin-top: 10px; border-radius: 8px; border: 1px solid #ddd; font-family: 'Cairo'; box-sizing: border-box; }
+        .btn { background: var(--primary); color: white; padding: 15px; width: 100%; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 1.1em; }
+        #timer { position: fixed; top: 10px; left: 10px; background: white; padding: 5px 15px; border-radius: 20px; border: 2px solid var(--primary); font-weight: bold; z-index: 1000; }
     </style>
 </head>
 <body>
+
+<div id="timer">35:00</div>
+
+<div class="header">
+    <h1 id="testTitle">تحميل الاختبار...</h1>
+    <p>أ. عبدالعزيز الفيفي 😇</p>
+</div>
+
 <div class="container">
-    <h2 id="title" style="text-align:center; color:#1e3a8a;">تحميل الاختبار...</h2>
-    <div id="loginSection">
-        <input type="text" id="stdName" placeholder="الاسم الرباعي">
+    <div id="loginSection" class="card">
+        <h3 style="text-align:center;">يرجى إدخال بياناتك للبدء</h3>
+        <input type="text" id="stdName" placeholder="الاسم الكامل">
         <input type="text" id="stdClass" placeholder="الصف والفصل">
-        <button class="btn" onclick="startTest()">دخول الاختبار</button>
+        <button class="btn" onclick="startExam()" style="margin-top:20px;">دخول الاختبار</button>
     </div>
+
     <div id="quizSection" style="display:none;"></div>
 </div>
 
 <script>
-    const firebaseConfig = { /* انسخ نفس إعدادات السحابة هنا */ };
+    // ⚠️ تنبيه: ضع هنا نفس إعدادات السحابة الموجودة في ملف index.html
+    const firebaseConfig = {
+        apiKey: "AIzaSyAVRIim7aXjg0hGrMk0qVrXT...", 
+        authDomain: "youy-apps.firebaseapp.com",
+        databaseURL: "https://youy-apps-default-rtdb.firebaseio.com",
+        projectId: "youy-apps",
+        storageBucket: "youy-apps.firebasestorage.app",
+        messagingSenderId: "690543747528",
+        appId: "1:690543747528:web:10c85ef0c93b79596620fd"
+    };
+
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
-    const testID = new URLSearchParams(window.location.search).get('id');
-    let questions = [];
 
-    database.ref('tests/' + testID).once('value', (s) => {
-        const d = s.val(); if(d) { questions = d.questions; document.getElementById('title').innerText = d.title; }
-    });
+    // جلب المعرف (ID) من الرابط
+    const urlParams = new URLSearchParams(window.location.search);
+    const testID = urlParams.get('id');
 
-    function startTest() {
-        if(!document.getElementById('stdName').value) return;
-        document.getElementById('loginSection').style.display = 'none';
-        const quiz = document.getElementById('quizSection'); quiz.style.display = 'block';
-        questions.forEach((q, i) => {
-            quiz.innerHTML += `<div class="q-box"><b>س${i+1}: ${q.q}</b><input type="text" id="ans${i}" placeholder="أجب هنا..."></div>`;
+    let examData = [];
+    let timeLeft = 35 * 60;
+
+    // التحقق من وجود المعرف وجلب الأسئلة فوراً عند تحميل الصفحة
+    if (testID) {
+        database.ref('tests/' + testID).once('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                examData = data.questions;
+                document.getElementById('testTitle').innerText = data.title;
+            } else {
+                Swal.fire('خطأ', 'الاختبار غير موجود أو تم حذفه', 'error');
+            }
         });
-        quiz.innerHTML += `<button class="btn" onclick="submit()">إرسال الإجابات</button>`;
+    } else {
+        Swal.fire('تنبيه', 'رابط الاختبار غير صحيح (ناقص المعرف)', 'warning');
     }
 
-    function submit() {
-        let score = 0;
-        questions.forEach((q, i) => {
-            let uAns = document.getElementById('ans'+i).value.trim();
-            // --- التصحيح الذكي جداً ---
-            const clean = (s) => s.replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/\s+/g, '').trim();
-            if(clean(uAns).includes(clean(q.ans)) && uAns !== "") score++;
+    // التحقق من منع الإعادة
+    if (localStorage.getItem('completed_' + testID)) {
+        document.body.innerHTML = `<div style="text-align:center; padding:50px; font-family:Cairo;"><h1>🛑 عذراً!</h1><p>لقد أديت هذا الاختبار مسبقاً.</p></div>`;
+    }
+
+    function startExam() {
+        const name = document.getElementById('stdName').value;
+        const cls = document.getElementById('stdClass').value;
+
+        if (!name || !cls) {
+            return Swal.fire('نقص بيانات', 'يرجى كتابة الاسم والفصل', 'warning');
+        }
+
+        if (examData.length === 0) {
+            return Swal.fire('عذراً', 'جاري تحميل الأسئلة، انتظر لحظة أو أعد تحميل الصفحة', 'info');
+        }
+
+        document.getElementById('loginSection').style.display = 'none';
+        const quizBox = document.getElementById('quizSection');
+        quizBox.style.display = 'block';
+
+        // عرض الأسئلة
+        examData.forEach((item, i) => {
+            let html = `<div class="q-box"><b>س${i+1}: ${item.q}</b>`;
+            if (item.type == "6") { // نوع اختيارات
+                item.opts.forEach(opt => {
+                    html += `<label style="display:block; margin:8px; cursor:pointer;"><input type="radio" name="q${i}" value="${opt}"> ${opt}</label>`;
+                });
+            } else {
+                html += `<input type="text" id="ans${i}" placeholder="أجب هنا...">`;
+            }
+            quizBox.innerHTML += html + `</div>`;
         });
 
+        quizBox.innerHTML += `<button class="btn" style="background:#10b981; margin-top:20px;" onclick="finishTest()">إنهاء وإرسال الإجابات</button>`;
+        
+        // تشغيل المؤقت
+        startTimer();
+    }
+
+    function startTimer() {
+        const timerInt = setInterval(() => {
+            let m = Math.floor(timeLeft / 60);
+            let s = timeLeft % 60;
+            document.getElementById('timer').innerText = `${m}:${s < 10 ? '0' + s : s}`;
+            if (timeLeft-- <= 0) {
+                clearInterval(timerInt);
+                finishTest();
+            }
+        }, 1000);
+    }
+
+    function finishTest() {
+        let score = 0;
+        let details = [];
+
+        examData.forEach((item, i) => {
+            let uAns = "";
+            if (item.type == "6") {
+                uAns = document.querySelector(`input[name="q${i}"]:checked`)?.value || "بدون إجابة";
+            } else {
+                uAns = document.getElementById('ans' + i).value.trim();
+            }
+
+            // التصحيح الذكي
+            const clean = (s) => s.replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/\s+/g, '').trim();
+            let isCorrect = clean(uAns).includes(clean(item.ans)) && uAns !== "";
+            if (isCorrect) score++;
+
+            details.push({ question: item.q, userAnswer: uAns, correctAnswer: item.ans, status: isCorrect });
+        });
+
+        // إرسال النتيجة للسحابة
         database.ref('results/' + testID).push({
             name: document.getElementById('stdName').value,
             class: document.getElementById('stdClass').value,
-            score: score, total: questions.length
+            score: score,
+            total: examData.length,
+            details: details,
+            timestamp: firebase.database.ServerValue.TIMESTAMP
         }).then(() => {
-            Swal.fire('انتهى الاختبار', `درجتك هي: ${score} من ${questions.length}`, 'success').then(() => location.reload());
+            localStorage.setItem('completed_' + testID, 'true');
+            Swal.fire('تم الإرسال', `درجتك هي: ${score} من ${examData.length}`, 'success').then(() => {
+                location.reload();
+            });
         });
     }
 </script>

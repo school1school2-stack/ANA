@@ -52,12 +52,12 @@
 <body>
 
 <div class="header">
-    <h1 id="headerTitle">تحميل الاختبار...</h1>
-    <p>إعداد الأستاذ: عبدالعزيز الفيفي - ثانوية الأمير عبدالمجيد 😇</p>
+    <h1 id="dynamicTitle">جاري تحميل الاختبار...</h1>
+    <p>إعداد الأستاذ: عبدالعزيز الفيفي - ثانوية الأمير عبدالمجيد</p>
 </div>
 
 <div class="container">
-    <div id="timer-bar">⏱️ <span id="clock">00:00</span></div>
+    <div id="timer-bar">⏱️ <span id="clock">45:00</span></div>
     <div class="progress-box"><div id="progress-fill"></div></div>
 
     <form id="quizForm">
@@ -78,7 +78,15 @@
         <div id="studentInfo" style="text-align:center; margin-bottom:20px; color:#64748b; font-weight:bold;"></div>
         <div style="overflow-x:auto">
             <table id="summaryTable">
-                <thead><tr><th>س</th><th>السؤال</th><th>إجابتك</th><th>الصحيحة</th><th>الحالة</th></tr></thead>
+                <thead>
+                    <tr>
+                        <th>س</th>
+                        <th>السؤال</th>
+                        <th>إجابتك</th>
+                        <th>الصحيحة</th>
+                        <th>الحالة</th>
+                    </tr>
+                </thead>
                 <tbody></tbody>
             </table>
         </div>
@@ -89,26 +97,27 @@
 </div>
 
 <script>
-// --- كود جلب البيانات ديناميكياً ---
 let examData = [];
-let testTitle = "اختبار مخصص";
-const urlParams = new URLSearchParams(window.location.search);
-const dataParam = urlParams.get('data');
+let totalQ = 0;
+let qPerPage = 7;
+let totalSteps = 0;
 
-if(dataParam) {
+// فك تشفير البيانات من الرابط
+const urlParams = new URLSearchParams(window.location.search);
+const dataRaw = urlParams.get('data');
+if(dataRaw) {
     try {
-        const decoded = JSON.parse(decodeURIComponent(escape(atob(dataParam))));
+        const decoded = JSON.parse(decodeURIComponent(escape(atob(dataRaw))));
         examData = decoded.questions;
-        testTitle = decoded.title;
-        document.getElementById('headerTitle').innerText = testTitle;
+        document.getElementById('dynamicTitle').innerText = decoded.title || "اختبار كفايات";
+        totalQ = examData.length;
+        totalSteps = Math.ceil(totalQ / qPerPage);
     } catch(e) {
-        document.body.innerHTML = "<h1 style='text-align:center; margin-top:100px;'>⚠️ خطأ في رابط الاختبار</h1>";
+        alert("خطأ في بيانات الاختبار");
     }
 }
 
 let timer;
-const qPerPage = 7;
-const totalSections = Math.ceil(examData.length / qPerPage);
 
 function startExam() {
     const name = document.getElementById('stdName').value;
@@ -118,20 +127,21 @@ function startExam() {
     document.getElementById('step0').style.display = 'none';
     document.getElementById('step1').classList.add('active');
     updateProgress(1);
-    startTimer(examData.length * 60); // دقيقة لكل سؤال
+    startTimer(totalQ * 60); // دقيقة لكل سؤال
 }
 
 function generateSections() {
     const cont = document.getElementById('quizContent');
-    for (let s = 0; s < totalSections; s++) {
+    cont.innerHTML = "";
+    for (let s = 0; s < totalSteps; s++) {
         const div = document.createElement('div');
         div.className = 'card'; div.id = `step${s+1}`;
-        div.innerHTML = `<h2 style="text-align:center; color:var(--primary);">القسم ${s+1} من ${totalSections}</h2>`;
+        div.innerHTML = `<h2 style="text-align:center; color:var(--primary);">القسم ${s+1} من ${totalSteps}</h2>`;
         
-        let start = s * qPerPage;
-        let end = Math.min(start + qPerPage, examData.length);
+        let startIdx = s * qPerPage;
+        let endIdx = Math.min(startIdx + qPerPage, totalQ);
 
-        for (let i = start; i < end; i++) {
+        for (let i = startIdx; i < endIdx; i++) {
             const item = examData[i];
             let qHtml = `<div class="q-box"><button type="button" class="hint-btn" onclick="Swal.fire('تلميحة','${item.hint}','info')">؟</button>
                          <span style="font-weight:bold">س${i+1}: ${item.q}</span>`;
@@ -143,28 +153,39 @@ function generateSections() {
             qHtml += `</div>`;
             div.innerHTML += qHtml;
         }
-        const isLast = (s === totalSections - 1);
-        div.innerHTML += `<div class="nav-controls">${isLast ? `<button type="button" class="btn btn-finish" onclick="processResults()">إنهاء وتصحيح الاختبار</button>` : `<button type="button" class="btn btn-next" onclick="nextSection(${s+1})">القسم التالي ⬅️</button>`}</div>`;
+        
+        const isLast = (s === totalSteps - 1);
+        div.innerHTML += `<div class="nav-controls">
+            ${isLast ? `<button type="button" class="btn btn-finish" onclick="processResults()">إنهاء وتصحيح الاختبار</button>` : 
+            `<button type="button" class="btn btn-next" onclick="nextSection(${s+1})">القسم التالي ⬅️</button>`}
+        </div>`;
         cont.appendChild(div);
     }
 }
 
 function nextSection(current) {
-    let unAnswered = [];
-    let start = (current-1)*qPerPage;
-    let end = Math.min(start + qPerPage, examData.length);
-    for(let i=start; i<end; i++) {
-        if(examData[i].type === 'radio') { if(!document.querySelector(`input[name="q${i}"]:checked`)) unAnswered.push(i+1); }
-        else { if(!document.getElementById(`ans${i}`).value.trim()) unAnswered.push(i+1); }
+    let unAnsweredInCurrent = [];
+    let startIdx = (current-1) * qPerPage;
+    let endIdx = Math.min(startIdx + qPerPage, totalQ);
+
+    for(let i = startIdx; i < endIdx; i++) {
+        if(examData[i].type === 'radio') { 
+            if(!document.querySelector(`input[name="q${i}"]:checked`)) unAnsweredInCurrent.push(i+1); 
+        } else { 
+            if(!document.getElementById(`ans${i}`).value.trim()) unAnsweredInCurrent.push(i+1); 
+        }
     }
-    if(unAnswered.length > 0) return Swal.fire('تنبيه','أجب على الأسئلة: ' + unAnswered.join(', '),'error');
-    
+
+    if(unAnsweredInCurrent.length > 0) { 
+        Swal.fire('تنبيه','يرجى الإجابة على جميع أسئلة هذا القسم أولاً. الأسئلة المفقودة: ' + unAnsweredInCurrent.join(', '),'error'); 
+        return; 
+    }
     document.getElementById(`step${current}`).classList.remove('active');
     document.getElementById(`step${current+1}`).classList.add('active');
     updateProgress(current+1); window.scrollTo(0,0);
 }
 
-function updateProgress(step) { document.getElementById('progress-fill').style.width = (step / totalSections) * 100 + "%"; }
+function updateProgress(step) { document.getElementById('progress-fill').style.width = (step / totalSteps) * 100 + "%"; }
 
 function startTimer(sec) {
     timer = setInterval(() => {
@@ -177,25 +198,48 @@ function startTimer(sec) {
 function smartCheck(u, a) {
     if(!u) return false;
     const clean = (s) => s.replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/\s+/g, '').trim();
-    return clean(u) === clean(a);
+    return clean(u).includes(clean(a)) || clean(u) === clean(a);
 }
 
 function processResults() {
+    let allUnanswered = [];
+    examData.forEach((item, i) => {
+        if(item.type === 'radio') {
+            if(!document.querySelector(`input[name="q${i}"]:checked`)) allUnanswered.push(i+1);
+        } else {
+            if(!document.getElementById(`ans${i}`).value.trim()) allUnanswered.push(i+1);
+        }
+    });
+
+    if(allUnanswered.length > 0) {
+        Swal.fire({ title: 'هناك أسئلة ناقصة!', text: 'تأكد من إجابة السؤال رقم: ' + allUnanswered.join(', '), icon: 'warning' });
+        return;
+    }
+
     let score = 0;
     const tbody = document.querySelector('#summaryTable tbody');
+    tbody.innerHTML = '';
+
     examData.forEach((item, i) => {
-        let uVal = (item.type === 'radio') ? (document.querySelector(`input[name="q${i}"]:checked`)?.value || "") : document.getElementById(`ans${i}`).value;
+        let uVal = (item.type === 'radio') ? document.querySelector(`input[name="q${i}"]:checked`).value : document.getElementById(`ans${i}`).value;
         let isCorrect = smartCheck(uVal, item.ans);
         if(isCorrect) score++;
         tbody.innerHTML += `<tr><td>${i+1}</td><td>${item.q}</td><td style="color:${isCorrect?'#166534':'#991b1b'}">${uVal}</td><td>${item.ans}</td><td><span class="status-badge ${isCorrect?'correct':'wrong'}">${isCorrect?'صحيح':'خطأ'}</span></td></tr>`;
     });
+
     localStorage.setItem('alfaifi_quiz_lock', 'true');
     clearInterval(timer);
     document.getElementById('quizForm').style.display = 'none';
+    document.getElementById('timer-bar').style.display = 'none';
     document.getElementById('resultCard').classList.add('active');
-    document.getElementById('scoreBox').innerText = `${score} / ${examData.length}`;
+    document.getElementById('scoreBox').innerText = `${score} / ${totalQ}`;
     document.getElementById('studentInfo').innerText = `الطالب: ${document.getElementById('stdName').value} | الصف: ${document.getElementById('stdClass').value}`;
+    Swal.fire('تم الانتهاء!','تم تصحيح اختبارك وقفل الجهاز بنجاح.','success');
 }
 </script>
+
+<footer style="text-align:center; padding:20px; font-size:12px; color:#94a3b8;">
+    جميع الحقوق محفوظة للأستاذ عبدالعزيز الفيفي © 2026 - ثانوية الأمير عبدالمجيد
+</footer>
 </body>
 </html>

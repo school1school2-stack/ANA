@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار النحو الشامل | أ. عبدالعزيز الفيفي</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root { --primary: #1e3a8a; --accent: #3b82f6; --success: #10b981; --error: #ef4444; --hint: #f59e0b; --bg: #f8fafc; }
+        body { font-family: 'Cairo', sans-serif; background: var(--bg); margin: 0; color: #1e293b; line-height: 1.6; }
+        .header { background: linear-gradient(135deg, #1e3a8a, #3b82f6); color: white; padding: 40px 20px; text-align: center; clip-path: polygon(0 0, 100% 0, 100% 90%, 0% 100%); }
+        .container { max-width: 900px; margin: -30px auto 50px; padding: 0 20px; }
+        #timer-bar { position: sticky; top: 10px; z-index: 100; background: white; border: 2px solid var(--primary); padding: 8px 25px; border-radius: 50px; width: fit-content; margin: 0 auto 20px; font-weight: 900; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .progress-box { background: #e2e8f0; height: 10px; border-radius: 10px; margin-bottom: 20px; overflow: hidden; }
+        #progress-fill { height: 100%; background: var(--success); width: 0%; transition: 0.5s; }
+        .card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); display: none; border: 1px solid #e2e8f0; }
+        .card.active { display: block; animation: slideIn 0.4s ease; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .q-box { background: #f1f5f9; padding: 20px; border-radius: 15px; margin-bottom: 20px; border-right: 6px solid var(--accent); position: relative; }
+        .hint-btn { position: absolute; left: 15px; top: 15px; background: var(--hint); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-weight: bold; font-size: 14px; }
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .opt-label { background: white; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: 0.2s; font-size: 14px; }
+        .opt-label:hover { border-color: var(--accent); }
+        input[type="text"] { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-family: 'Cairo'; margin-top: 10px; box-sizing: border-box; }
+        .nav-controls { display: flex; justify-content: space-between; gap: 15px; margin-top: 30px; }
+        .btn { padding: 12px 35px; border-radius: 12px; border: none; font-family: 'Cairo'; font-weight: 700; cursor: pointer; transition: 0.3s; }
+        .btn-next { background: var(--primary); color: white; flex: 2; }
+        .btn-finish { background: var(--success); color: white; width: 100%; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; font-size: 14px; }
+        th, td { padding: 12px; border: 1px solid #e2e8f0; text-align: right; }
+        th { background: #f8fafc; color: var(--primary); }
+        .status-badge { padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 12px; }
+        .correct { background: #dcfce7; color: #166534; }
+        .wrong { background: #fee2e2; color: #991b1b; }
+    </style>
+</head>
+<script>
+    if (localStorage.getItem('alfaifi_quiz_lock')) {
+        window.stop(); 
+        document.documentElement.innerHTML = `
+        <body style="background:#f8fafc; display:flex; align-items:center; justify-content:center; height:100vh; font-family:'Cairo'; text-align:center;">
+            <div style="background:white; padding:40px; border-radius:20px; box-shadow:0 10px 30px rgba(0,0,0,0.1); border:2px solid #ef4444;">
+                <h1 style="color:#ef4444;">🛑 وصول مرفوض</h1>
+                <p style="font-size:18px; color:#1e293b;">عذراً، لقد قمت بإنهاء هذا الاختبار مسبقاً.</p>
+                <p style="color:#64748b;">لا يسمح النظام بإعادة الاختبار من نفس الجهاز لضمان مصداقية النتائج.</p>
+                <p style="font-weight:bold; margin-top:20px;">أ. عبدالعزيز الفيفي ثانوية الأمير عبدالمجيد 😇</p>
+            </div>
+        </body>`;
+    }
+</script>
+<body>
+
+<div class="header">
+    <h1 id="headerTitle">تحميل الاختبار...</h1>
+    <p>إعداد الأستاذ: عبدالعزيز الفيفي - ثانوية الأمير عبدالمجيد 😇</p>
+</div>
+
+<div class="container">
+    <div id="timer-bar">⏱️ <span id="clock">00:00</span></div>
+    <div class="progress-box"><div id="progress-fill"></div></div>
+
+    <form id="quizForm">
+        <div class="card active" id="step0">
+            <h3 style="text-align:center">بيانات الطالب</h3>
+            <div style="display:grid; gap:15px;">
+                <input type="text" id="stdName" placeholder="الاسم الكامل" required>
+                <input type="text" id="stdClass" placeholder="الصف والفصل" required>
+                <button type="button" class="btn btn-next" style="width:100%; margin-top:10px" onclick="startExam()">ابدأ الاختبار الآن</button>
+            </div>
+        </div>
+        <div id="quizContent"></div>
+    </form>
+
+    <div id="resultCard" class="card">
+        <h2 style="text-align:center">التقرير النهائي للأداء</h2>
+        <div id="scoreBox" style="text-align:center; font-size:45px; font-weight:900; color:var(--primary); margin:20px 0;"></div>
+        <div id="studentInfo" style="text-align:center; margin-bottom:20px; color:#64748b; font-weight:bold;"></div>
+        <div style="overflow-x:auto">
+            <table id="summaryTable">
+                <thead><tr><th>س</th><th>السؤال</th><th>إجابتك</th><th>الصحيحة</th><th>الحالة</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div style="background:#fff3cd; padding:15px; border-radius:10px; margin-top:20px; text-align:center; color:#856404; font-weight:bold; border:1px solid #ffeeba;">
+            ⚠️ تم حفظ نتيجتك وتسجيل جهازك، لن تتمكن من دخول الاختبار مرة أخرى.
+        </div>
+    </div>
+</div>
+
+<script>
+// --- كود جلب البيانات ديناميكياً ---
+let examData = [];
+let testTitle = "اختبار مخصص";
+const urlParams = new URLSearchParams(window.location.search);
+const dataParam = urlParams.get('data');
+
+if(dataParam) {
+    try {
+        const decoded = JSON.parse(decodeURIComponent(escape(atob(dataParam))));
+        examData = decoded.questions;
+        testTitle = decoded.title;
+        document.getElementById('headerTitle').innerText = testTitle;
+    } catch(e) {
+        document.body.innerHTML = "<h1 style='text-align:center; margin-top:100px;'>⚠️ خطأ في رابط الاختبار</h1>";
+    }
+}
+
+let timer;
+const qPerPage = 7;
+const totalSections = Math.ceil(examData.length / qPerPage);
+
+function startExam() {
+    const name = document.getElementById('stdName').value;
+    const cls = document.getElementById('stdClass').value;
+    if(!name || !cls) return Swal.fire('تنبيه','أكمل بياناتك أولاً','warning');
+    generateSections();
+    document.getElementById('step0').style.display = 'none';
+    document.getElementById('step1').classList.add('active');
+    updateProgress(1);
+    startTimer(examData.length * 60); // دقيقة لكل سؤال
+}
+
+function generateSections() {
+    const cont = document.getElementById('quizContent');
+    for (let s = 0; s < totalSections; s++) {
+        const div = document.createElement('div');
+        div.className = 'card'; div.id = `step${s+1}`;
+        div.innerHTML = `<h2 style="text-align:center; color:var(--primary);">القسم ${s+1} من ${totalSections}</h2>`;
+        
+        let start = s * qPerPage;
+        let end = Math.min(start + qPerPage, examData.length);
+
+        for (let i = start; i < end; i++) {
+            const item = examData[i];
+            let qHtml = `<div class="q-box"><button type="button" class="hint-btn" onclick="Swal.fire('تلميحة','${item.hint}','info')">؟</button>
+                         <span style="font-weight:bold">س${i+1}: ${item.q}</span>`;
+            if(item.type === 'radio') {
+                qHtml += `<div class="options-grid">`;
+                item.opts.forEach(o => qHtml += `<label class="opt-label"><input type="radio" name="q${i}" value="${o}"> ${o}</label>`);
+                qHtml += `</div>`;
+            } else { qHtml += `<input type="text" id="ans${i}" placeholder="اكتب الإجابة هنا...">`; }
+            qHtml += `</div>`;
+            div.innerHTML += qHtml;
+        }
+        const isLast = (s === totalSections - 1);
+        div.innerHTML += `<div class="nav-controls">${isLast ? `<button type="button" class="btn btn-finish" onclick="processResults()">إنهاء وتصحيح الاختبار</button>` : `<button type="button" class="btn btn-next" onclick="nextSection(${s+1})">القسم التالي ⬅️</button>`}</div>`;
+        cont.appendChild(div);
+    }
+}
+
+function nextSection(current) {
+    let unAnswered = [];
+    let start = (current-1)*qPerPage;
+    let end = Math.min(start + qPerPage, examData.length);
+    for(let i=start; i<end; i++) {
+        if(examData[i].type === 'radio') { if(!document.querySelector(`input[name="q${i}"]:checked`)) unAnswered.push(i+1); }
+        else { if(!document.getElementById(`ans${i}`).value.trim()) unAnswered.push(i+1); }
+    }
+    if(unAnswered.length > 0) return Swal.fire('تنبيه','أجب على الأسئلة: ' + unAnswered.join(', '),'error');
+    
+    document.getElementById(`step${current}`).classList.remove('active');
+    document.getElementById(`step${current+1}`).classList.add('active');
+    updateProgress(current+1); window.scrollTo(0,0);
+}
+
+function updateProgress(step) { document.getElementById('progress-fill').style.width = (step / totalSections) * 100 + "%"; }
+
+function startTimer(sec) {
+    timer = setInterval(() => {
+        let m = Math.floor(sec/60), s = sec%60;
+        document.getElementById('clock').innerText = `${m}:${s<10?'0'+s:s}`;
+        if(sec-- <= 0) { clearInterval(timer); processResults(); }
+    }, 1000);
+}
+
+function smartCheck(u, a) {
+    if(!u) return false;
+    const clean = (s) => s.replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/\s+/g, '').trim();
+    return clean(u) === clean(a);
+}
+
+function processResults() {
+    let score = 0;
+    const tbody = document.querySelector('#summaryTable tbody');
+    examData.forEach((item, i) => {
+        let uVal = (item.type === 'radio') ? (document.querySelector(`input[name="q${i}"]:checked`)?.value || "") : document.getElementById(`ans${i}`).value;
+        let isCorrect = smartCheck(uVal, item.ans);
+        if(isCorrect) score++;
+        tbody.innerHTML += `<tr><td>${i+1}</td><td>${item.q}</td><td style="color:${isCorrect?'#166534':'#991b1b'}">${uVal}</td><td>${item.ans}</td><td><span class="status-badge ${isCorrect?'correct':'wrong'}">${isCorrect?'صحيح':'خطأ'}</span></td></tr>`;
+    });
+    localStorage.setItem('alfaifi_quiz_lock', 'true');
+    clearInterval(timer);
+    document.getElementById('quizForm').style.display = 'none';
+    document.getElementById('resultCard').classList.add('active');
+    document.getElementById('scoreBox').innerText = `${score} / ${examData.length}`;
+    document.getElementById('studentInfo').innerText = `الطالب: ${document.getElementById('stdName').value} | الصف: ${document.getElementById('stdClass').value}`;
+}
+</script>
+</body>
+</html>
